@@ -1,13 +1,15 @@
 /**
  * LearnLoop Backend Server
  * 
- * Phase 2: Authentication and authorization
+ * Phase 3: Topics and Posts
  * A human-first learning social app for students.
  */
 
 import 'dotenv/config';
 import express from 'express';
 import authRoutes from './src/routes/authRoutes.js';
+import topicsRoutes from './src/routes/topicsRoutes.js';
+import postsRoutes from './src/routes/postsRoutes.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -21,13 +23,15 @@ app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'ok',
     message: 'LearnLoop Backend is running',
-    phase: 'Phase 2: Authentication',
+    phase: 'Phase 3: Topics and Posts',
     timestamp: new Date().toISOString()
   });
 });
 
 // API Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/topics', topicsRoutes);
+app.use('/api/posts', postsRoutes);
 
 // 404 handler
 app.use((req, res) => {
@@ -49,11 +53,23 @@ app.use((err, req, res, next) => {
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 LearnLoop Backend running on port ${PORT}`);
-  console.log(`📚 Phase 2: Authentication and Authorization`);
+  console.log(`📚 Phase 3: Topics and Posts`);
   console.log(`🔗 Health check: http://localhost:${PORT}/health`);
-  console.log(`🔐 Auth endpoints:`);
+  console.log(`\n🔐 Auth endpoints:`);
   console.log(`   POST /api/auth/register`);
   console.log(`   POST /api/auth/login`);
+  console.log(`\n📂 Topics endpoints:`);
+  console.log(`   GET  /api/topics`);
+  console.log(`   GET  /api/topics/:id`);
+  console.log(`   GET  /api/topics/by-name/:name`);
+  console.log(`\n📝 Posts endpoints:`);
+  console.log(`   POST   /api/posts (auth required)`);
+  console.log(`   GET    /api/posts`);
+  console.log(`   GET    /api/posts/:id`);
+  console.log(`   GET    /api/posts/topic/:topicId`);
+  console.log(`   GET    /api/posts/author/:authorId`);
+  console.log(`   PUT    /api/posts/:id (auth required)`);
+  console.log(`   DELETE /api/posts/:id (auth required)`);
 });
 
 export default app;
