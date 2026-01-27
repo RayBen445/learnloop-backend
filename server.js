@@ -5,7 +5,6 @@
  * A human-first learning social app for students.
  */
 
-import 'dotenv/config';
 import express from 'express';
 import authRoutes from './src/routes/authRoutes.js';
 import topicsRoutes from './src/routes/topicsRoutes.js';
