@@ -3,8 +3,7 @@
 // Phase 1: Database design only (no routes, controllers, or auth yet)
 
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["driverAdapters"]
+  provider = "prisma-client-js"
 }
 
 datasource db {

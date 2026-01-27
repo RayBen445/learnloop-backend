@@ -10,8 +10,7 @@
  * - Use the DATABASE_URL from environment variables (via adapter)
  * - Log errors only (can be adjusted for development)
  * 
- * Note: Prisma 7+ requires an adapter for direct database connections.
- * This uses the @prisma/adapter-pg adapter for PostgreSQL.
+ * Note: Using @prisma/adapter-pg for PostgreSQL connection pooling.
  */
 
 import { PrismaClient } from '@prisma/client';
