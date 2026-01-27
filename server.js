@@ -1,7 +1,7 @@
 /**
  * LearnLoop Backend Server
  * 
- * Phase 6: Saved Posts (Bookmarks)
+ * Phase 7: Rate Limiting and Abuse Protection
  * A human-first learning social app for students.
  */
 
@@ -26,7 +26,7 @@ app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'ok',
     message: 'LearnLoop Backend is running',
-    phase: 'Phase 6: Saved Posts (Bookmarks)',
+    phase: 'Phase 7: Rate Limiting and Abuse Protection',
     timestamp: new Date().toISOString()
   });
 });
@@ -59,7 +59,7 @@ app.use((err, req, res, next) => {
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 LearnLoop Backend running on port ${PORT}`);
-  console.log(`📚 Phase 6: Saved Posts (Bookmarks)`);
+  console.log(`📚 Phase 7: Rate Limiting and Abuse Protection`);
   console.log(`🔗 Health check: http://localhost:${PORT}/health`);
   console.log(`\n🔐 Auth endpoints:`);
   console.log(`   POST /api/auth/register`);

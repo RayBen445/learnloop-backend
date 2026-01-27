@@ -4,10 +4,12 @@
  * CRUD endpoints for posts with authentication.
  * Phase 3: Posts only (no comments, votes, or saves yet).
  * Phase 4: Added comments listing endpoint.
+ * Phase 7: Added rate limiting for abuse protection.
  */
 
 import express from 'express';
 import { requireAuth } from '../middleware/authMiddleware.js';
+import { createPostLimiter, updateLimiter, deleteLimiter } from '../middleware/rateLimiters.js';
 import {
   createPost,
   listPosts,
@@ -26,6 +28,8 @@ const router = express.Router();
  * Create a new post
  * Requires authentication
  * 
+ * Rate limit: 10 posts per hour (user-based)
+ * 
  * Body:
  * - title: string (max 60 chars)
  * - content: string (80-220 words)
@@ -35,8 +39,9 @@ const router = express.Router();
  * - 201: Post created
  * - 400: Validation error
  * - 404: Topic not found
+ * - 429: Too many requests
  */
-router.post('/', requireAuth, createPost);
+router.post('/', requireAuth, createPostLimiter, createPost);
 
 /**
  * GET /api/posts
@@ -122,6 +127,8 @@ router.get('/:id', getPostById);
  * Update post
  * Requires authentication (author only)
  * 
+ * Rate limit: 30 updates per hour (user-based)
+ * 
  * Params:
  * - id: Post ID (number)
  * 
@@ -134,13 +141,16 @@ router.get('/:id', getPostById);
  * - 200: Updated post
  * - 403: Not post owner
  * - 404: Post not found
+ * - 429: Too many requests
  */
-router.put('/:id', requireAuth, updatePost);
+router.put('/:id', requireAuth, updateLimiter, updatePost);
 
 /**
  * DELETE /api/posts/:id
  * Soft delete post
  * Requires authentication (author only)
+ * 
+ * Rate limit: 20 deletes per hour (user-based)
  * 
  * Params:
  * - id: Post ID (number)
@@ -149,7 +159,8 @@ router.put('/:id', requireAuth, updatePost);
  * - 200: Post deleted
  * - 403: Not post owner
  * - 404: Post not found
+ * - 429: Too many requests
  */
-router.delete('/:id', requireAuth, deletePost);
+router.delete('/:id', requireAuth, deleteLimiter, deletePost);
 
 export default router;
