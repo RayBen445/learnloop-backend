@@ -22,6 +22,7 @@ model User {
   username       String   @unique
   hashedPassword String
   learningScore  Int      @default(0)
+  isAdmin        Boolean  @default(false) // Phase 8: Admin flag for moderation
   createdAt      DateTime @default(now())
 
   // Relations
@@ -29,6 +30,7 @@ model User {
   comments   Comment[]
   savedPosts SavedPost[]
   votes      Vote[]
+  reports    Report[]
 
   @@index([email])
   @@index([username])
@@ -68,6 +70,7 @@ model Post {
   content        String    @db.Text
   authorId       String    @db.Uuid
   primaryTopicId Int
+  isHidden       Boolean   @default(false) // Phase 8: Soft hide for moderation
   createdAt      DateTime  @default(now())
   deletedAt      DateTime? // Soft delete support
 
@@ -77,11 +80,13 @@ model Post {
   comments     Comment[]
   savedBy      SavedPost[]
   votes        Vote[]
+  reports      Report[]
 
   @@index([authorId])
   @@index([primaryTopicId])
   @@index([createdAt])
   @@index([deletedAt]) // For efficient filtering of deleted posts
+  @@index([isHidden]) // Phase 8: For efficient filtering of hidden posts
   @@map("posts")
 }
 
@@ -96,16 +101,19 @@ model Comment {
   content   String   @db.Text
   authorId  String   @db.Uuid
   postId    Int
+  isHidden  Boolean  @default(false) // Phase 8: Soft hide for moderation
   createdAt DateTime @default(now())
 
   // Relations
-  author User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
-  votes  Vote[]
+  author  User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  post    Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  votes   Vote[]
+  reports Report[]
 
   @@index([authorId])
   @@index([postId])
   @@index([createdAt])
+  @@index([isHidden]) // Phase 8: For efficient filtering of hidden comments
   @@map("comments")
 }
 
@@ -165,8 +173,48 @@ model Vote {
 }
 
 // ====================
+// REPORT MODEL
+// ====================
+// Phase 8: User reports for content moderation
+// - Users can report posts or comments (exactly one)
+// - Prevents duplicate reports by same user on same content
+// - When >= 5 reports, content is automatically hidden
+model Report {
+  id        Int          @id @default(autoincrement())
+  reporterId String      @db.Uuid
+  postId    Int?
+  commentId Int?
+  reason    ReportReason
+  details   String?      @db.Text
+  createdAt DateTime     @default(now())
+
+  // Relations
+  reporter User     @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  post     Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  comment  Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  // Prevent duplicate reports by same user on same post
+  @@unique([reporterId, postId])
+  // Prevent duplicate reports by same user on same comment
+  @@unique([reporterId, commentId])
+  @@index([postId])
+  @@index([commentId])
+  @@index([createdAt])
+  @@map("reports")
+}
+
+// ====================
 // ENUMS
 // ====================
 enum VoteType {
   UPVOTE
+}
+
+enum ReportReason {
+  SPAM
+  INAPPROPRIATE
+  HARASSMENT
+  MISINFORMATION
+  OFF_TOPIC
+  OTHER
 }

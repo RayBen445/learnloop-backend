@@ -181,3 +181,28 @@ export const deleteLimiter = rateLimit({
     });
   }
 });
+
+/**
+ * Rate limiter for reporting content (Phase 8)
+ * - User-based limiting when authenticated, IP-based otherwise
+ * - 10 reports per hour
+ */
+export const reportLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 10, // 10 reports per window
+  message: {
+    error: 'Too many reports submitted',
+    message: 'You can submit up to 10 reports per hour',
+    retryAfter: '1 hour'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipFailedRequests: true,
+  handler: (req, res) => {
+    res.status(429).json({
+      error: 'Too many reports submitted',
+      message: 'You have reached the report submission limit. Please try again later.',
+      retryAfter: Math.ceil(req.rateLimit.resetTime.getTime() / 1000)
+    });
+  }
+});

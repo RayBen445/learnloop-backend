@@ -1,7 +1,7 @@
 /**
  * LearnLoop Backend Server
  * 
- * Phase 7: Rate Limiting and Abuse Protection
+ * Phase 8: Moderation and Quality Control
  * A human-first learning social app for students.
  */
 
@@ -13,6 +13,8 @@ import postsRoutes from './src/routes/postsRoutes.js';
 import commentsRoutes from './src/routes/commentsRoutes.js';
 import votesRoutes from './src/routes/votesRoutes.js';
 import savedPostsRoutes from './src/routes/savedPostsRoutes.js';
+import reportsRoutes from './src/routes/reportsRoutes.js';
+import adminRoutes from './src/routes/adminRoutes.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -26,7 +28,7 @@ app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'ok',
     message: 'LearnLoop Backend is running',
-    phase: 'Phase 7: Rate Limiting and Abuse Protection',
+    phase: 'Phase 8: Moderation and Quality Control',
     timestamp: new Date().toISOString()
   });
 });
@@ -38,6 +40,8 @@ app.use('/api/posts', postsRoutes);
 app.use('/api/comments', commentsRoutes);
 app.use('/api/votes', votesRoutes);
 app.use('/api/saved-posts', savedPostsRoutes);
+app.use('/api/reports', reportsRoutes); // Phase 8
+app.use('/api/admin', adminRoutes); // Phase 8
 
 // 404 handler
 app.use((req, res) => {
