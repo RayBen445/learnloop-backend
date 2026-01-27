@@ -14,7 +14,7 @@ This platform is intentionally human-first and does NOT use AI to generate, sugg
 - **ORM**: Prisma
 - **Auth**: Email + password with JWT
 
-## Current Status: Phase 6 Complete ✅
+## Current Status: Phase 7 Complete ✅
 
 ### Phase 1: Database Design ✅
 - ✅ Database schema design
@@ -56,6 +56,16 @@ This platform is intentionally human-first and does NOT use AI to generate, sugg
 - ✅ Check if post is saved (optional auth)
 - ✅ Duplicate save prevention
 - ✅ Idempotent unsave operation
+
+### Phase 7: Rate Limiting ✅
+- ✅ Authentication rate limiting (5 req/15 min) - brute force protection
+- ✅ Post creation rate limiting (10/hour) - spam prevention
+- ✅ Comment creation rate limiting (20/hour) - spam prevention
+- ✅ Voting rate limiting (60/hour) - manipulation prevention
+- ✅ Save/unsave rate limiting (30/hour) - abuse prevention
+- ✅ Update/delete rate limiting (30/hour, 20/hour) - abuse prevention
+- ✅ Clear 429 responses with retry-after headers
+- ✅ No limits on read-only endpoints
 
 ### Database Models
 1. **User** - User accounts with UUID, email, username, and learning score
@@ -166,7 +176,7 @@ GET    /api/saved-posts/check/:postId (optional auth)
 DELETE /api/saved-posts/:postId (auth required)
 ```
 
-See [AUTH.md](./AUTH.md) for authentication, [POSTS.md](./POSTS.md) for posts, [COMMENTS.md](./COMMENTS.md) for comments, [VOTES.md](./VOTES.md) for votes, and [SAVED_POSTS.md](./SAVED_POSTS.md) for saved posts documentation.
+See [AUTH.md](./AUTH.md) for authentication, [POSTS.md](./POSTS.md) for posts, [COMMENTS.md](./COMMENTS.md) for comments, [VOTES.md](./VOTES.md) for votes, [SAVED_POSTS.md](./SAVED_POSTS.md) for saved posts, and [RATE_LIMITING.md](./RATE_LIMITING.md) for rate limiting documentation.
 
 ## Documentation
 
@@ -176,6 +186,7 @@ See [AUTH.md](./AUTH.md) for authentication, [POSTS.md](./POSTS.md) for posts, [
 - **[COMMENTS.md](./COMMENTS.md)** - Comments API documentation
 - **[VOTES.md](./VOTES.md)** - Votes and Learning Score API documentation
 - **[SAVED_POSTS.md](./SAVED_POSTS.md)** - Saved Posts (Bookmarks) API documentation
+- **[RATE_LIMITING.md](./RATE_LIMITING.md)** - Rate Limiting and Abuse Protection
 - **[DATABASE_INIT.md](./DATABASE_INIT.md)** - Database initialization details
 
 ## Project Structure
@@ -191,7 +202,8 @@ learnloop-backend/
 │   │   ├── votesController.js       # Votes logic
 │   │   └── savedPostsController.js  # Saved Posts logic
 │   ├── middleware/
-│   │   └── authMiddleware.js        # JWT verification
+│   │   ├── authMiddleware.js        # JWT verification
+│   │   └── rateLimiters.js          # Rate limiting
 │   └── routes/
 │       ├── authRoutes.js            # Auth endpoints
 │       ├── topicsRoutes.js          # Topics endpoints
