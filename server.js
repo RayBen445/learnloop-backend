@@ -1,7 +1,7 @@
 /**
  * LearnLoop Backend Server
  * 
- * Phase 5: Votes and Learning Score
+ * Phase 6: Saved Posts (Bookmarks)
  * A human-first learning social app for students.
  */
 
@@ -12,6 +12,7 @@ import topicsRoutes from './src/routes/topicsRoutes.js';
 import postsRoutes from './src/routes/postsRoutes.js';
 import commentsRoutes from './src/routes/commentsRoutes.js';
 import votesRoutes from './src/routes/votesRoutes.js';
+import savedPostsRoutes from './src/routes/savedPostsRoutes.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -25,7 +26,7 @@ app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'ok',
     message: 'LearnLoop Backend is running',
-    phase: 'Phase 5: Votes and Learning Score',
+    phase: 'Phase 6: Saved Posts (Bookmarks)',
     timestamp: new Date().toISOString()
   });
 });
@@ -36,6 +37,7 @@ app.use('/api/topics', topicsRoutes);
 app.use('/api/posts', postsRoutes);
 app.use('/api/comments', commentsRoutes);
 app.use('/api/votes', votesRoutes);
+app.use('/api/saved-posts', savedPostsRoutes);
 
 // 404 handler
 app.use((req, res) => {
@@ -57,7 +59,7 @@ app.use((err, req, res, next) => {
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 LearnLoop Backend running on port ${PORT}`);
-  console.log(`📚 Phase 5: Votes and Learning Score`);
+  console.log(`📚 Phase 6: Saved Posts (Bookmarks)`);
   console.log(`🔗 Health check: http://localhost:${PORT}/health`);
   console.log(`\n🔐 Auth endpoints:`);
   console.log(`   POST /api/auth/register`);
@@ -85,6 +87,11 @@ app.listen(PORT, () => {
   console.log(`   DELETE /api/votes/:id (auth required)`);
   console.log(`   GET    /api/votes/posts/:id (optional auth)`);
   console.log(`   GET    /api/votes/comments/:id (optional auth)`);
+  console.log(`\n🔖 Saved Posts endpoints:`);
+  console.log(`   POST   /api/saved-posts (auth required)`);
+  console.log(`   GET    /api/saved-posts (auth required)`);
+  console.log(`   GET    /api/saved-posts/check/:postId (optional auth)`);
+  console.log(`   DELETE /api/saved-posts/:postId (auth required)`);
 });
 
 export default app;
