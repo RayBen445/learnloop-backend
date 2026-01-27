@@ -26,7 +26,13 @@ function countWords(text) {
 
 /**
  * Validate post content
- * Returns { valid: boolean, error?: string, wordCount: number }
+ * 
+ * Validates title, content (word count), and topic ID.
+ * 
+ * @param {string} title - Post title
+ * @param {string} content - Post content
+ * @param {number} primaryTopicId - Primary topic ID
+ * @returns {{valid: boolean, error?: string, wordCount?: number}} Validation result
  */
 function validatePostContent(title, content, primaryTopicId) {
   // Validate title

@@ -113,7 +113,7 @@ Words are counted by splitting content on whitespace. Only non-empty strings are
 #### Create Post
 ```
 POST /api/posts
-Authorization: ******
+Authorization: Bearer <token>
 Content-Type: application/json
 ```
 
@@ -313,7 +313,7 @@ GET /api/posts/author/:authorId?limit=20&offset=0
 #### Update Post
 ```
 PUT /api/posts/:id
-Authorization: ******
+Authorization: Bearer <token>
 Content-Type: application/json
 ```
 
@@ -351,7 +351,7 @@ Content-Type: application/json
 #### Delete Post (Soft Delete)
 ```
 DELETE /api/posts/:id
-Authorization: ******
+Authorization: Bearer <token>
 ```
 
 Sets the `deletedAt` timestamp without removing from database. Deleted posts are excluded from all queries.
