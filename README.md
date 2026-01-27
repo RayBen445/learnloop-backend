@@ -14,7 +14,7 @@ This platform is intentionally human-first and does NOT use AI to generate, sugg
 - **ORM**: Prisma
 - **Auth**: Email + password with JWT
 
-## Current Status: Phase 2 Complete ✅
+## Current Status: Phase 3 Complete ✅
 
 ### Phase 1: Database Design ✅
 - ✅ Database schema design
@@ -28,6 +28,13 @@ This platform is intentionally human-first and does NOT use AI to generate, sugg
 - ✅ Password hashing with bcrypt
 - ✅ Auth middleware for protected routes
 - ✅ Authorization helpers
+
+### Phase 3: Topics and Posts ✅
+- ✅ Topics API (read-only)
+- ✅ Posts CRUD with strict validation
+- ✅ Word count enforcement (80-220 words)
+- ✅ Soft delete for posts
+- ✅ Ownership-based authorization
 
 ### Database Models
 1. **User** - User accounts with UUID, email, username, and learning score
@@ -71,10 +78,15 @@ npm run dev
 npm start
 ```
 
-### 5. Test Authentication
+### 5. Test API
 ```bash
 # In another terminal
+
+# Test authentication
 node test-auth.js
+
+# Test topics and posts
+node test-posts.js
 ```
 
 ## API Endpoints
@@ -90,12 +102,31 @@ POST /api/auth/register
 POST /api/auth/login
 ```
 
-See [AUTH.md](./AUTH.md) for detailed authentication documentation.
+### Topics
+```
+GET /api/topics
+GET /api/topics/:id
+GET /api/topics/by-name/:name
+```
+
+### Posts
+```
+POST   /api/posts (auth required)
+GET    /api/posts
+GET    /api/posts/:id
+GET    /api/posts/topic/:topicId
+GET    /api/posts/author/:authorId
+PUT    /api/posts/:id (auth required)
+DELETE /api/posts/:id (auth required)
+```
+
+See [AUTH.md](./AUTH.md) for authentication documentation and [POSTS.md](./POSTS.md) for posts documentation.
 
 ## Documentation
 
 - **[SETUP.md](./SETUP.md)** - Database setup and Prisma configuration
 - **[AUTH.md](./AUTH.md)** - Authentication and authorization guide
+- **[POSTS.md](./POSTS.md)** - Topics and Posts API documentation
 - **[DATABASE_INIT.md](./DATABASE_INIT.md)** - Database initialization details
 
 ## Project Structure
@@ -104,29 +135,34 @@ See [AUTH.md](./AUTH.md) for detailed authentication documentation.
 learnloop-backend/
 ├── src/
 │   ├── controllers/
-│   │   └── authController.js      # Auth logic
+│   │   ├── authController.js       # Auth logic
+│   │   ├── topicsController.js     # Topics logic
+│   │   └── postsController.js      # Posts logic
 │   ├── middleware/
-│   │   └── authMiddleware.js      # JWT verification
+│   │   └── authMiddleware.js       # JWT verification
 │   └── routes/
-│       └── authRoutes.js          # Auth endpoints
+│       ├── authRoutes.js           # Auth endpoints
+│       ├── topicsRoutes.js         # Topics endpoints
+│       └── postsRoutes.js          # Posts endpoints
 ├── prisma/
-│   ├── schema.prisma              # Database schema
-│   └── migrations/                # Migration files
-├── server.js                      # Express app
-├── prisma.js                      # Database client
-├── test-auth.js                   # Auth tests
-└── package.json                   # Dependencies
+│   ├── schema.prisma               # Database schema
+│   └── migrations/                 # Migration files
+├── server.js                       # Express app
+├── prisma.js                       # Database client
+├── test-auth.js                    # Auth tests
+├── test-posts.js                   # Posts tests
+└── package.json                    # Dependencies
 ```
 
 ## What's Next
 
-Phase 2 is complete. Future phases will implement:
-- Posts and content creation
+Phase 3 is complete. Future phases will implement:
 - Comments system
-- Topics management
-- Voting functionality
+- Voting functionality (upvotes only)
 - Saved posts
 - User profiles
+- Feed ranking
+- Moderation features
 
 ## License
 
