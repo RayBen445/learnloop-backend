@@ -21,7 +21,7 @@ The `learningScore` field on the User model tracks reputation:
 - **+1 point** when someone upvotes your post or comment
 - **-1 point** when someone removes their upvote
 - Updates happen atomically in database transactions
-- Score can never go below 0 (enforced at database level with default)
+- Score starts at 0 for new users (defined in schema default)
 
 ## Endpoints
 

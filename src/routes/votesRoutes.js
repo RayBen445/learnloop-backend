@@ -50,7 +50,7 @@ router.post('/', requireAuth, addVote);
 router.delete('/:id', requireAuth, removeVote);
 
 /**
- * GET /api/posts/:id/votes
+ * GET /api/votes/posts/:id
  * Get vote count for a post
  * Optional authentication
  * 
@@ -64,7 +64,7 @@ router.delete('/:id', requireAuth, removeVote);
 router.get('/posts/:id', optionalAuth, getPostVotes);
 
 /**
- * GET /api/comments/:id/votes
+ * GET /api/votes/comments/:id
  * Get vote count for a comment
  * Optional authentication
  * 
