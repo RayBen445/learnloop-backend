@@ -6,6 +6,7 @@
  */
 
 import express from 'express';
+import cors from 'cors';
 import authRoutes from './src/routes/authRoutes.js';
 import settingsRoutes from './src/routes/settingsRoutes.js';
 import usersRoutes from './src/routes/usersRoutes.js';
@@ -20,6 +21,42 @@ import feedRoutes from './src/routes/feedRoutes.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// CORS Configuration
+// Dynamic origin function to support:
+// - All Vercel preview deployments (*.vercel.app)
+// - localhost for development
+// - Future domain changes without code edits
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps, curl, Postman)
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    // Check if origin matches allowed patterns
+    const allowedPatterns = [
+      /^https?:\/\/localhost(:\d+)?$/, // localhost with any port
+      /^https?:\/\/127\.0\.0\.1(:\d+)?$/, // 127.0.0.1 with any port
+      /\.vercel\.app$/ // All Vercel deployments (*.vercel.app)
+    ];
+
+    const isAllowed = allowedPatterns.some(pattern => pattern.test(origin));
+
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      callback(new Error(`Origin ${origin} not allowed by CORS`));
+    }
+  },
+  credentials: true, // Allow cookies and authorization headers
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Allowed HTTP methods
+  allowedHeaders: ['Content-Type', 'Authorization'], // Allow JSON and auth headers
+  optionsSuccessStatus: 200 // Return 200 for OPTIONS preflight requests
+};
+
+// Apply CORS middleware before all routes
+app.use(cors(corsOptions));
 
 // Middleware
 app.use(express.json());
