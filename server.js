@@ -27,20 +27,34 @@ app.set('trust proxy', 1);
 
 const PORT = process.env.PORT || 3000;
 
+// Health check endpoint - Before CORS for Render health checks
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    message: 'LearnLoop Backend is running',
+    phase: 'Phase 9: Feed and Discovery',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // CORS Configuration
 // 2. CORS - Applied before body parsing for efficient preflight handling
 // Dynamic origin function to support:
-// - Requests with no origin (Render health checks, server-side requests)
 // - Vercel deployments (https://*.vercel.app including learnloop-frontend.vercel.app)
 // - localhost for development only
-// - Custom domains via ALLOWED_ORIGINS environment variable
+// - Custom domains via ALLOWED_ORIGINS environment variable (no code changes needed)
+// Note: Health check endpoint is before CORS to allow Render health checks
 const corsOptions = {
   origin: function (origin, callback) {
     const isProduction = process.env.NODE_ENV === 'production';
 
-    // Allow requests with no origin (e.g., Render health checks, server-side requests, Postman, curl)
+    // Reject requests with no origin in production (except health check which is before CORS)
+    // Allow in development for tools like Postman, curl
     if (!origin) {
-      return callback(null, true);
+      if (!isProduction) {
+        return callback(null, true);
+      }
+      return callback(null, false);
     }
 
     // Build allowed patterns based on environment
@@ -91,16 +105,6 @@ app.use(express.urlencoded({ extended: true }));
 
 // 4. Rate limiting - Applied per-route in individual route files (see src/routes/*)
 // 5. Routes - Defined below with route-specific rate limiters
-
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'ok',
-    message: 'LearnLoop Backend is running',
-    phase: 'Phase 9: Feed and Discovery',
-    timestamp: new Date().toISOString()
-  });
-});
 
 // API Routes
 app.use('/api/auth', authRoutes);
