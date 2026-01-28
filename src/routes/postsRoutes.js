@@ -8,7 +8,7 @@
  */
 
 import express from 'express';
-import { requireAuth } from '../middleware/authMiddleware.js';
+import { requireAuth, requireVerified } from '../middleware/authMiddleware.js';
 import { createPostLimiter, updateLimiter, deleteLimiter } from '../middleware/rateLimiters.js';
 import {
   createPost,
@@ -41,7 +41,7 @@ const router = express.Router();
  * - 404: Topic not found
  * - 429: Too many requests
  */
-router.post('/', requireAuth, createPostLimiter, createPost);
+router.post('/', requireAuth, requireVerified, createPostLimiter, createPost);
 
 /**
  * GET /api/posts
@@ -143,7 +143,7 @@ router.get('/:id', getPostById);
  * - 404: Post not found
  * - 429: Too many requests
  */
-router.put('/:id', requireAuth, updateLimiter, updatePost);
+router.put('/:id', requireAuth, requireVerified, updateLimiter, updatePost);
 
 /**
  * DELETE /api/posts/:id
@@ -161,6 +161,6 @@ router.put('/:id', requireAuth, updateLimiter, updatePost);
  * - 404: Post not found
  * - 429: Too many requests
  */
-router.delete('/:id', requireAuth, deleteLimiter, deletePost);
+router.delete('/:id', requireAuth, requireVerified, deleteLimiter, deletePost);
 
 export default router;

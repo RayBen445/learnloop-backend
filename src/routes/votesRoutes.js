@@ -7,7 +7,7 @@
  */
 
 import express from 'express';
-import { requireAuth, optionalAuth } from '../middleware/authMiddleware.js';
+import { requireAuth, requireVerified, optionalAuth } from '../middleware/authMiddleware.js';
 import { voteLimiter } from '../middleware/rateLimiters.js';
 import {
   addVote,
@@ -37,7 +37,7 @@ const router = express.Router();
  * - 409: Already voted
  * - 429: Too many requests
  */
-router.post('/', requireAuth, voteLimiter, addVote);
+router.post('/', requireAuth, requireVerified, voteLimiter, addVote);
 
 /**
  * DELETE /api/votes/:id
@@ -55,7 +55,7 @@ router.post('/', requireAuth, voteLimiter, addVote);
  * - 404: Vote not found
  * - 429: Too many requests
  */
-router.delete('/:id', requireAuth, voteLimiter, removeVote);
+router.delete('/:id', requireAuth, requireVerified, voteLimiter, removeVote);
 
 /**
  * GET /api/votes/posts/:id

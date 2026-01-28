@@ -7,7 +7,7 @@
  */
 
 import express from 'express';
-import { requireAuth } from '../middleware/authMiddleware.js';
+import { requireAuth, requireVerified } from '../middleware/authMiddleware.js';
 import { createCommentLimiter, updateLimiter, deleteLimiter } from '../middleware/rateLimiters.js';
 import {
   createComment,
@@ -36,7 +36,7 @@ const router = express.Router();
  * - 404: Post not found
  * - 429: Too many requests
  */
-router.post('/', requireAuth, createCommentLimiter, createComment);
+router.post('/', requireAuth, requireVerified, createCommentLimiter, createComment);
 
 /**
  * GET /api/comments/:id
@@ -70,7 +70,7 @@ router.get('/:id', getCommentById);
  * - 404: Comment not found
  * - 429: Too many requests
  */
-router.put('/:id', requireAuth, updateLimiter, updateComment);
+router.put('/:id', requireAuth, requireVerified, updateLimiter, updateComment);
 
 /**
  * DELETE /api/comments/:id
@@ -88,6 +88,6 @@ router.put('/:id', requireAuth, updateLimiter, updateComment);
  * - 404: Comment not found
  * - 429: Too many requests
  */
-router.delete('/:id', requireAuth, deleteLimiter, deleteComment);
+router.delete('/:id', requireAuth, requireVerified, deleteLimiter, deleteComment);
 
 export default router;

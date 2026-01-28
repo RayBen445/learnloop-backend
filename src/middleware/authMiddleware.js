@@ -69,6 +69,7 @@ export async function requireAuth(req, res, next) {
         username: true,
         learningScore: true,
         isAdmin: true,
+        isVerified: true,
         createdAt: true
       }
     });
@@ -130,6 +131,7 @@ export async function optionalAuth(req, res, next) {
           username: true,
           learningScore: true,
           isAdmin: true,
+          isVerified: true,
           createdAt: true
         }
       });
@@ -159,4 +161,40 @@ export async function optionalAuth(req, res, next) {
  */
 export function isOwner(userId, resourceOwnerId) {
   return userId === resourceOwnerId;
+}
+
+/**
+ * Require verified email for write operations
+ * 
+ * Must be used after requireAuth middleware.
+ * Prevents unverified users from creating or modifying content.
+ * 
+ * Usage:
+ * import { requireAuth, requireVerified } from './middleware/authMiddleware.js';
+ * router.post('/posts', requireAuth, requireVerified, createPost);
+ */
+export function requireVerified(req, res, next) {
+  try {
+    // This middleware must be used after requireAuth
+    if (!req.user) {
+      return res.status(401).json({
+        error: 'Authentication required'
+      });
+    }
+
+    // Check if user's email is verified
+    if (!req.user.isVerified) {
+      return res.status(403).json({
+        error: 'Email verification required. Please verify your email to perform this action.'
+      });
+    }
+
+    next();
+
+  } catch (error) {
+    console.error('Verified middleware error:', error);
+    return res.status(500).json({
+      error: 'Internal server error during verification check'
+    });
+  }
 }

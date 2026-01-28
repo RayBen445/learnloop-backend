@@ -25,18 +25,43 @@ model User {
   bio            String?  @db.VarChar(160) // Optional bio, max 160 characters
   learningScore  Int      @default(0)
   isAdmin        Boolean  @default(false) // Phase 8: Admin flag for moderation
+  isVerified     Boolean  @default(false) // Email verification status
   createdAt      DateTime @default(now())
 
   // Relations
-  posts      Post[]
-  comments   Comment[]
-  savedPosts SavedPost[]
-  votes      Vote[]
-  reports    Report[]
+  posts              Post[]
+  comments           Comment[]
+  savedPosts         SavedPost[]
+  votes              Vote[]
+  reports            Report[]
+  verificationTokens VerificationToken[]
 
   @@index([email])
   @@index([username])
   @@map("users")
+}
+
+// ====================
+// VERIFICATION TOKEN MODEL
+// ====================
+// Email verification tokens for new user accounts
+// - Secure random tokens for email verification
+// - Tokens expire after 24 hours
+// - Invalidated after successful verification
+model VerificationToken {
+  id        Int      @id @default(autoincrement())
+  userId    String   @db.Uuid
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("verification_tokens")
 }
 
 // ====================

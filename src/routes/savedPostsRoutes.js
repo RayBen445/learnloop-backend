@@ -6,7 +6,7 @@
  */
 
 import express from 'express';
-import { requireAuth, optionalAuth } from '../middleware/authMiddleware.js';
+import { requireAuth, requireVerified, optionalAuth } from '../middleware/authMiddleware.js';
 import { saveLimiter } from '../middleware/rateLimiters.js';
 import {
   savePost,
@@ -33,7 +33,7 @@ const router = express.Router();
  * - 409: Post already saved
  * - 429: Too many requests
  */
-router.post('/', requireAuth, saveLimiter, savePost);
+router.post('/', requireAuth, requireVerified, saveLimiter, savePost);
 
 /**
  * GET /api/saved-posts
@@ -76,6 +76,6 @@ router.get('/check/:postId', optionalAuth, checkIfSaved);
  * - 200: Post unsaved (idempotent)
  * - 429: Too many requests
  */
-router.delete('/:postId', requireAuth, saveLimiter, unsavePost);
+router.delete('/:postId', requireAuth, requireVerified, saveLimiter, unsavePost);
 
 export default router;
