@@ -136,6 +136,8 @@ app.listen(PORT, () => {
   console.log(`\n🔐 Auth endpoints:`);
   console.log(`   POST /api/auth/register`);
   console.log(`   POST /api/auth/login`);
+  console.log(`   POST /api/auth/verify-email`);
+  console.log(`   POST /api/auth/resend-verification`);
   console.log(`\n⚙️  Settings endpoints:`);
   console.log(`   GET  /api/me (auth required)`);
   console.log(`   PUT  /api/me (auth required)`);
