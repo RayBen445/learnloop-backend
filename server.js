@@ -26,6 +26,7 @@ const PORT = process.env.PORT || 3000;
 // Dynamic origin function to support:
 // - Vercel preview deployments (https://*.vercel.app)
 // - localhost for development only
+// - Custom domains via ALLOWED_ORIGINS environment variable
 // - Future domain changes without code edits
 const corsOptions = {
   origin: function (origin, callback) {
@@ -33,13 +34,28 @@ const corsOptions = {
 
     // Allow requests with no origin only in development (e.g., Postman, curl)
     if (!origin) {
-      return callback(null, !isProduction);
+      if (!isProduction) {
+        return callback(null, true);
+      }
+      // In production, log and reject no-origin requests for security monitoring
+      console.warn('CORS: Rejected request with no origin header in production');
+      return callback(null, false);
     }
 
     // Build allowed patterns based on environment
     const allowedPatterns = [
-      /^https:\/\/[a-z0-9-]+\.vercel\.app$/ // Vercel deployments (HTTPS only)
+      /^https:\/\/[a-zA-Z0-9_-]+\.vercel\.app$/ // Vercel deployments (HTTPS only, allows uppercase and underscores)
     ];
+
+    // Add custom domains from environment variable
+    if (process.env.ALLOWED_ORIGINS) {
+      const customOrigins = process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim());
+      customOrigins.forEach(customOrigin => {
+        // Escape special regex characters and create exact match pattern
+        const escapedOrigin = customOrigin.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        allowedPatterns.push(new RegExp(`^${escapedOrigin}$`));
+      });
+    }
 
     // Only allow localhost in development
     if (!isProduction) {
@@ -61,7 +77,8 @@ const corsOptions = {
   credentials: true, // Allow cookies and authorization headers
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Allowed HTTP methods
   allowedHeaders: ['Content-Type', 'Authorization'], // Allow JSON and auth headers
-  optionsSuccessStatus: 200 // Return 200 for OPTIONS preflight requests
+  optionsSuccessStatus: 200, // Return 200 for OPTIONS preflight requests
+  maxAge: 86400 // Cache preflight responses for 24 hours (improves performance)
 };
 
 // Apply CORS middleware before all routes
