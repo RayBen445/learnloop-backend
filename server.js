@@ -24,29 +24,38 @@ const PORT = process.env.PORT || 3000;
 
 // CORS Configuration
 // Dynamic origin function to support:
-// - All Vercel preview deployments (*.vercel.app)
-// - localhost for development
+// - Vercel preview deployments (https://*.vercel.app)
+// - localhost for development only
 // - Future domain changes without code edits
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps, curl, Postman)
+    const isProduction = process.env.NODE_ENV === 'production';
+
+    // Allow requests with no origin only in development (e.g., Postman, curl)
     if (!origin) {
-      return callback(null, true);
+      return callback(null, !isProduction);
     }
 
-    // Check if origin matches allowed patterns
+    // Build allowed patterns based on environment
     const allowedPatterns = [
-      /^https?:\/\/localhost(:\d+)?$/, // localhost with any port
-      /^https?:\/\/127\.0\.0\.1(:\d+)?$/, // 127.0.0.1 with any port
-      /\.vercel\.app$/ // All Vercel deployments (*.vercel.app)
+      /^https:\/\/[a-z0-9-]+\.vercel\.app$/ // Vercel deployments (HTTPS only)
     ];
+
+    // Only allow localhost in development
+    if (!isProduction) {
+      allowedPatterns.push(
+        /^https?:\/\/localhost(:\d+)?$/, // localhost with any port
+        /^https?:\/\/127\.0\.0\.1(:\d+)?$/ // 127.0.0.1 with any port
+      );
+    }
 
     const isAllowed = allowedPatterns.some(pattern => pattern.test(origin));
 
     if (isAllowed) {
       callback(null, true);
     } else {
-      callback(new Error(`Origin ${origin} not allowed by CORS`));
+      // Return false instead of throwing error for proper CORS rejection
+      callback(null, false);
     }
   },
   credentials: true, // Allow cookies and authorization headers
