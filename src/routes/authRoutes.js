@@ -7,7 +7,7 @@
 
 import express from 'express';
 import { register, login, verifyEmail, resendVerificationEmail } from '../controllers/authController.js';
-import { registerLimiter, loginLimiter } from '../middleware/rateLimiters.js';
+import { registerLimiter, loginLimiter, authLimiter } from '../middleware/rateLimiters.js';
 
 const router = express.Router();
 
