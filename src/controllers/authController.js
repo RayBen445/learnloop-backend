@@ -173,7 +173,9 @@ export async function register(req, res) {
   } catch (error) {
     console.error('Registration error:', error);
     return res.status(500).json({
-      error: 'Internal server error during registration'
+      error: 'Internal server error during registration',
+      message: 'An unexpected error occurred. Please try again later.',
+      code: 'SERVER_ERROR'
     });
   }
 }
@@ -257,7 +259,9 @@ export async function login(req, res) {
   } catch (error) {
     console.error('Login error:', error);
     return res.status(500).json({
-      error: 'Internal server error during login'
+      error: 'Internal server error during login',
+      message: 'An unexpected error occurred. Please try again later.',
+      code: 'SERVER_ERROR'
     });
   }
 }
@@ -360,7 +364,9 @@ export async function verifyEmail(req, res) {
   } catch (error) {
     console.error('Email verification error:', error);
     return res.status(500).json({
-      error: 'Internal server error during email verification'
+      error: 'Internal server error during email verification',
+      message: 'An unexpected error occurred. Please try again later.',
+      code: 'SERVER_ERROR'
     });
   }
 }
@@ -438,7 +444,9 @@ export async function resendVerificationEmail(req, res) {
   } catch (error) {
     console.error('Resend verification email error:', error);
     return res.status(500).json({
-      error: 'Internal server error while sending verification email'
+      error: 'Internal server error while sending verification email',
+      message: 'An unexpected error occurred. Please try again later.',
+      code: 'SERVER_ERROR'
     });
   }
 }
