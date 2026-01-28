@@ -8,32 +8,36 @@ The email verification system in LearnLoop backend can be temporarily disabled u
 
 ### Environment Variable
 
+Add to your `.env` file (without quotes):
+
 ```bash
-REQUIRE_EMAIL_VERIFICATION="true"  # Enable email verification (recommended for production)
+REQUIRE_EMAIL_VERIFICATION=true  # Enable email verification (recommended for production)
 # or
-REQUIRE_EMAIL_VERIFICATION="false" # Disable email verification
+REQUIRE_EMAIL_VERIFICATION=false # Disable email verification
 # or leave unset (defaults to disabled)
 ```
+
+**Note**: The code checks if the value is exactly the string `'true'` (case-sensitive). Any other value or unset variable will be treated as disabled.
 
 ### Behavior Matrix
 
 | REQUIRE_EMAIL_VERIFICATION | Registration Behavior | Login Behavior | Email Sent? |
 |---------------------------|----------------------|----------------|-------------|
-| `"true"` (enabled) | User created with `emailVerified: false` | Blocks login until verified | ✅ Yes |
-| `"false"` or unset (disabled) | User created with `emailVerified: true` | Allows immediate login | ❌ No |
+| `true` (enabled) | User created with `emailVerified: false` | Blocks login until verified | ✅ Yes |
+| `false` or unset (disabled) | User created with `emailVerified: true` | Allows immediate login | ❌ No |
 
 ## Implementation Details
 
 ### Registration Flow
 
-**When verification is ENABLED (`"true"`):**
+**When verification is ENABLED (`true`):**
 1. User registers with email, username, password
 2. User is created with `emailVerified: false` and `isVerified: false`
 3. Verification token is generated and stored
 4. Verification email is sent to user
 5. Response: "Verification email sent. Please check your inbox."
 
-**When verification is DISABLED (not `"true"`):**
+**When verification is DISABLED (not `true`):**
 1. User registers with email, username, password
 2. User is created with `emailVerified: true` and `isVerified: true`
 3. No verification token is created
@@ -42,13 +46,13 @@ REQUIRE_EMAIL_VERIFICATION="false" # Disable email verification
 
 ### Login Flow
 
-**When verification is ENABLED (`"true"`):**
+**When verification is ENABLED (`true`):**
 1. User provides email and password
 2. Credentials are validated
 3. **Email verification check**: If `emailVerified === false`, login is blocked
 4. Error: "Email not verified" (HTTP 403)
 
-**When verification is DISABLED (not `"true"`):**
+**When verification is DISABLED (not `true`):**
 1. User provides email and password
 2. Credentials are validated
 3. Email verification check is **skipped**
@@ -59,7 +63,7 @@ REQUIRE_EMAIL_VERIFICATION="false" # Disable email verification
 
 The feature flag is implemented in `/src/controllers/authController.js`:
 
-**Registration (lines 124-185):**
+**Registration:**
 ```javascript
 // Feature flag: REQUIRE_EMAIL_VERIFICATION controls whether email verification is required
 // When disabled (not "true"), auto-verify users on registration
@@ -83,7 +87,7 @@ if (requireEmailVerification) {
 }
 ```
 
-**Login (lines 263-273):**
+**Login:**
 ```javascript
 // Feature flag: REQUIRE_EMAIL_VERIFICATION controls whether email verification is required
 // Only check email verification if the feature flag is enabled
@@ -102,7 +106,7 @@ if (requireEmailVerification && !user.emailVerified) {
 
 The verification endpoints remain available even when the feature flag is disabled:
 
-- `POST /api/auth/verify-email` - Verify email with token
+- `GET /api/auth/verify-email?token=<token>` - Verify email with token (accessed via email link)
 - `POST /api/auth/resend-verification` - Resend verification email
 
 These endpoints can be used if email verification is re-enabled in the future.
@@ -113,14 +117,14 @@ These endpoints can be used if email verification is re-enabled in the future.
 Disable verification to simplify testing:
 ```bash
 # .env
-REQUIRE_EMAIL_VERIFICATION="false"
+REQUIRE_EMAIL_VERIFICATION=false
 ```
 
 ### Production
 Enable verification for security:
 ```bash
 # .env
-REQUIRE_EMAIL_VERIFICATION="true"
+REQUIRE_EMAIL_VERIFICATION=true
 ```
 
 ### Gradual Migration
@@ -178,7 +182,7 @@ node test-feature-flag.js
 
 1. Set environment variable:
    ```bash
-   REQUIRE_EMAIL_VERIFICATION="false"
+   REQUIRE_EMAIL_VERIFICATION=false
    ```
 
 2. Restart the server
@@ -191,7 +195,7 @@ node test-feature-flag.js
 
 1. Set environment variable:
    ```bash
-   REQUIRE_EMAIL_VERIFICATION="true"
+   REQUIRE_EMAIL_VERIFICATION=true
    ```
 
 2. Restart the server
@@ -232,7 +236,7 @@ node test-feature-flag.js
 **Problem**: Behavior doesn't change when setting the environment variable.
 
 **Solution**:
-1. Ensure the value is exactly `"true"` (case-sensitive, in quotes)
+1. Ensure the value is exactly `true` (case-sensitive, without quotes in .env file)
 2. Restart the server after changing `.env`
 3. Check that `.env` file is being loaded (for local development)
 4. Verify environment variable is set correctly:
