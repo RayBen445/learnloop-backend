@@ -6,7 +6,7 @@
  */
 
 import express from 'express';
-import { requireAuth } from '../middleware/authMiddleware.js';
+import { requireAuth, optionalAuth } from '../middleware/authMiddleware.js';
 import { updateLimiter } from '../middleware/rateLimiters.js';
 import { getCurrentUser, updateProfile } from '../controllers/settingsController.js';
 
@@ -16,20 +16,20 @@ const router = express.Router();
  * GET /api/me
  * Get current authenticated user's profile
  * 
- * Requires authentication
+ * Optional authentication - Returns user if authenticated, null if not
  * 
- * Rate limit: 30 requests per hour (user-based)
+ * Rate limit: 30 requests per hour (user-based when authenticated)
  * 
  * Response:
- * - 200: User object with fields (id, username, bio, learningScore, createdAt)
- * - 404: User not found
+ * - 200: User object with fields (id, username, bio, learningScore, createdAt) or { user: null }
+ * - 404: User not found (only when authenticated but user doesn't exist)
  * - 429: Too many requests
  * 
  * Security:
- * - Auth required (JWT)
+ * - Optional auth (JWT) - Returns null instead of 401 when not authenticated
  * - Returns only safe fields (no email, password, or admin status)
  */
-router.get('/', requireAuth, updateLimiter, getCurrentUser);
+router.get('/', optionalAuth, updateLimiter, getCurrentUser);
 
 /**
  * PUT /api/me

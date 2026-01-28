@@ -17,13 +17,19 @@ const USERNAME_REGEX = /^[a-zA-Z0-9_]+$/;
  * Get current authenticated user's profile
  * 
  * GET /api/me
- * Requires authentication
+ * Optional authentication
  * 
- * Returns current user's profile information:
+ * Returns current user's profile information if authenticated,
+ * or null if not authenticated:
  * - id, username, bio, learningScore, createdAt
  */
 export async function getCurrentUser(req, res) {
   try {
+    // If no user is authenticated, return null
+    if (!req.user) {
+      return res.status(200).json({ user: null });
+    }
+
     const userId = req.user.id;
 
     const user = await prisma.user.findUnique({
