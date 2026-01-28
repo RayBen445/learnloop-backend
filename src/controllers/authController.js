@@ -28,10 +28,12 @@ const MIN_PASSWORD_LENGTH = 8;
  * - Unique username
  * - Password must be at least 8 characters
  * - Password is hashed before storage
- * - Creates unverified user (isVerified: false)
- * - Generates verification token
- * - Sends verification email
- * - No auto-login (token not returned)
+ * 
+ * Feature Flag: REQUIRE_EMAIL_VERIFICATION
+ * - When "true": Creates unverified user (isVerified: false), generates token, sends verification email
+ * - When not "true" (default): Auto-verifies user (isVerified: true), no email sent
+ * 
+ * - No auto-login (token not returned in either case)
  */
 export async function register(req, res) {
   try {
@@ -219,7 +221,11 @@ export async function register(req, res) {
  * 
  * Requirements:
  * - Email + password authentication
- * - Email must be verified (emailVerified: true)
+ * 
+ * Feature Flag: REQUIRE_EMAIL_VERIFICATION
+ * - When "true": Email must be verified (emailVerified: true) to login
+ * - When not "true" (default): Email verification check is skipped
+ * 
  * - Returns JWT token on success
  * - Token includes userId only
  */
