@@ -172,6 +172,26 @@ export async function register(req, res) {
 
   } catch (error) {
     console.error('Registration error:', error);
+    
+    // Handle unique constraint violation (race condition)
+    if (error.code === 'P2002') {
+      const field = error.meta?.target?.[0];
+      if (field === 'email') {
+        return res.status(409).json({
+          error: 'Email already registered',
+          message: 'This email is already in use. Please use a different email or try logging in.',
+          code: 'EMAIL_EXISTS'
+        });
+      }
+      if (field === 'username') {
+        return res.status(409).json({
+          error: 'Username already taken',
+          message: 'This username is already in use. Please choose a different username.',
+          code: 'USERNAME_EXISTS'
+        });
+      }
+    }
+    
     return res.status(500).json({
       error: 'Internal server error during registration',
       message: 'An unexpected error occurred. Please try again later.',

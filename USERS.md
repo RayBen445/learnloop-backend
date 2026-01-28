@@ -63,14 +63,14 @@ Get the authenticated user's profile information.
 
 **Endpoint:** `GET /api/me`
 
-**Authentication:** Required (JWT token)
+**Authentication:** Optional (JWT token)
 
-**Headers:**
+**Headers (optional):**
 ```
 Authorization: Bearer <jwt_token>
 ```
 
-**Response (200 OK):**
+**Response (200 OK - Authenticated):**
 ```json
 {
   "user": {
@@ -83,17 +83,19 @@ Authorization: Bearer <jwt_token>
 }
 ```
 
-**Response (401 Unauthorized):**
+**Response (200 OK - Not Authenticated):**
 ```json
 {
-  "error": "Authentication required"
+  "user": null
 }
 ```
 
 **Response (404 Not Found):**
 ```json
 {
-  "error": "User not found"
+  "error": "User not found",
+  "message": "Your account could not be found.",
+  "code": "USER_NOT_FOUND"
 }
 ```
 

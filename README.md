@@ -169,7 +169,7 @@ POST /api/auth/login
 
 ### Settings
 ```
-GET /api/me (auth required)
+GET /api/me (optional auth)
 PUT /api/me (auth required)
 ```
 
