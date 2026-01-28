@@ -4,7 +4,30 @@
  * Handles contact form submissions via email.
  */
 
-import nodemailer from 'nodemailer';
+import { sendEmail } from '../utils/emailService.js';
+
+// Maximum length constraints
+const MAX_NAME_LENGTH = 100;
+const MAX_EMAIL_LENGTH = 255;
+const MAX_SUBJECT_LENGTH = 200;
+const MAX_MESSAGE_LENGTH = 5000;
+
+/**
+ * Escape HTML special characters to prevent XSS in email templates
+ * 
+ * @param {string} text - Text to escape
+ * @returns {string} HTML-safe text
+ */
+function escapeHtml(text) {
+  const map = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  };
+  return text.replace(/[&<>"']/g, m => map[m]);
+}
 
 /**
  * Submit contact form
@@ -12,10 +35,10 @@ import nodemailer from 'nodemailer';
  * POST /api/contact
  * 
  * Body:
- * - name: string (required)
- * - email: string (required, valid email format)
- * - subject: string (required)
- * - message: string (required)
+ * - name: string (required, max 100 chars)
+ * - email: string (required, valid email format, max 255 chars)
+ * - subject: string (required, max 200 chars)
+ * - message: string (required, max 5000 chars)
  * 
  * Sends email to CONTACT_EMAIL_TO address.
  * Does not store messages in database.
@@ -46,6 +69,35 @@ export async function submitContactForm(req, res) {
       });
     }
 
+    // Validate length constraints
+    if (trimmedName.length > MAX_NAME_LENGTH) {
+      return res.status(400).json({
+        error: 'Invalid input',
+        message: `Name must not exceed ${MAX_NAME_LENGTH} characters`
+      });
+    }
+
+    if (trimmedEmail.length > MAX_EMAIL_LENGTH) {
+      return res.status(400).json({
+        error: 'Invalid input',
+        message: `Email must not exceed ${MAX_EMAIL_LENGTH} characters`
+      });
+    }
+
+    if (trimmedSubject.length > MAX_SUBJECT_LENGTH) {
+      return res.status(400).json({
+        error: 'Invalid input',
+        message: `Subject must not exceed ${MAX_SUBJECT_LENGTH} characters`
+      });
+    }
+
+    if (trimmedMessage.length > MAX_MESSAGE_LENGTH) {
+      return res.status(400).json({
+        error: 'Invalid input',
+        message: `Message must not exceed ${MAX_MESSAGE_LENGTH} characters`
+      });
+    }
+
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(trimmedEmail)) {
@@ -65,46 +117,56 @@ export async function submitContactForm(req, res) {
       });
     }
 
-    // Create email transporter
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT) || 587,
-      secure: process.env.SMTP_SECURE === 'true',
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-      }
-    });
+    // Escape HTML to prevent XSS in email
+    const escapedName = escapeHtml(trimmedName);
+    const escapedEmail = escapeHtml(trimmedEmail);
+    const escapedSubject = escapeHtml(trimmedSubject);
+    const escapedMessage = escapeHtml(trimmedMessage);
 
-    // Email options
-    const mailOptions = {
-      from: process.env.SMTP_USER,
-      to: contactEmailTo,
-      subject: `[LearnLoop Contact] ${trimmedSubject}`,
-      text: `Name: ${trimmedName}\nEmail: ${trimmedEmail}\n\nMessage:\n${trimmedMessage}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #333;">New Contact Form Submission</h2>
-          <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
-            <p><strong>Name:</strong> ${trimmedName}</p>
-            <p><strong>Email:</strong> ${trimmedEmail}</p>
-          </div>
-          <div style="background-color: #fff; padding: 15px; border: 1px solid #ddd; border-radius: 5px;">
-            <h3 style="color: #555; margin-top: 0;">Message:</h3>
-            <p style="white-space: pre-wrap;">${trimmedMessage}</p>
-          </div>
+    // Prepare email content
+    const emailSubject = `[LearnLoop Contact] ${trimmedSubject}`;
+    const emailText = `Name: ${trimmedName}\nEmail: ${trimmedEmail}\n\nMessage:\n${trimmedMessage}`;
+    const emailHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #333;">New Contact Form Submission</h2>
+        <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
+          <p><strong>Name:</strong> ${escapedName}</p>
+          <p><strong>Email:</strong> ${escapedEmail}</p>
         </div>
-      `
-    };
+        <div style="background-color: #fff; padding: 15px; border: 1px solid #ddd; border-radius: 5px;">
+          <h3 style="color: #555; margin-top: 0;">Message:</h3>
+          <p style="white-space: pre-wrap;">${escapedMessage}</p>
+        </div>
+        <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
+        <p style="color: #666; font-size: 12px;">
+          To reply to this message, click reply or send an email to: ${escapedEmail}
+        </p>
+      </div>
+    `;
 
-    // Send email
+    // Send email using emailService
     try {
-      await transporter.sendMail(mailOptions);
+      const result = await sendEmail({
+        to: contactEmailTo,
+        subject: emailSubject,
+        text: emailText,
+        html: emailHtml,
+        replyTo: trimmedEmail
+      });
+
+      if (!result.success) {
+        console.error('Error sending contact form email:', result.error);
+        return res.status(500).json({
+          error: 'Email sending failed',
+          message: 'Unable to send your message at this time. Please try again later.'
+        });
+      }
       
       res.status(200).json({
         success: true,
         message: 'Your message has been sent successfully. We will get back to you soon.'
       });
+
     } catch (emailError) {
       console.error('Error sending contact form email:', emailError);
       
