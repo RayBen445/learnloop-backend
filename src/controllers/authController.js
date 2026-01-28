@@ -40,7 +40,9 @@ export async function register(req, res) {
     // Validation
     if (!email || !username || !password) {
       return res.status(400).json({
-        error: 'Email, username, and password are required'
+        error: 'Email, username, and password are required',
+        message: 'Please provide all required fields to create your account.',
+        code: 'MISSING_FIELDS'
       });
     }
 
@@ -48,7 +50,9 @@ export async function register(req, res) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return res.status(400).json({
-        error: 'Invalid email format'
+        error: 'Invalid email format',
+        message: 'Please enter a valid email address.',
+        code: 'INVALID_EMAIL'
       });
     }
 
@@ -56,27 +60,35 @@ export async function register(req, res) {
     const usernameRegex = /^[a-zA-Z0-9_]{3,30}$/;
     if (!usernameRegex.test(username)) {
       return res.status(400).json({
-        error: 'Username must be 3-30 characters and contain only letters, numbers, and underscores'
+        error: 'Username must be 3-30 characters and contain only letters, numbers, and underscores',
+        message: 'Please choose a username between 3-30 characters using only letters, numbers, and underscores.',
+        code: 'INVALID_USERNAME'
       });
     }
 
     // Reject weak passwords
     if (password.length < MIN_PASSWORD_LENGTH) {
       return res.status(400).json({
-        error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters long`
+        error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters long`,
+        message: `Please choose a stronger password with at least ${MIN_PASSWORD_LENGTH} characters.`,
+        code: 'WEAK_PASSWORD'
       });
     }
 
     // Check for common weak patterns
     if (/^(.)\1+$/.test(password)) {
       return res.status(400).json({
-        error: 'Password is too weak (repeated characters)'
+        error: 'Password is too weak (repeated characters)',
+        message: 'Please choose a stronger password without repeated characters.',
+        code: 'WEAK_PASSWORD'
       });
     }
 
     if (/^(password|12345678|qwerty)$/i.test(password)) {
       return res.status(400).json({
-        error: 'Password is too weak (common password)'
+        error: 'Password is too weak (common password)',
+        message: 'This password is too common. Please choose a unique, stronger password.',
+        code: 'WEAK_PASSWORD'
       });
     }
 
@@ -87,7 +99,9 @@ export async function register(req, res) {
 
     if (existingEmail) {
       return res.status(409).json({
-        error: 'Email already registered'
+        error: 'Email already registered',
+        message: 'This email is already in use. Please use a different email or try logging in.',
+        code: 'EMAIL_EXISTS'
       });
     }
 
@@ -98,7 +112,9 @@ export async function register(req, res) {
 
     if (existingUsername) {
       return res.status(409).json({
-        error: 'Username already taken'
+        error: 'Username already taken',
+        message: 'This username is already in use. Please choose a different username.',
+        code: 'USERNAME_EXISTS'
       });
     }
 
@@ -178,7 +194,9 @@ export async function login(req, res) {
     // Validation
     if (!email || !password) {
       return res.status(400).json({
-        error: 'Email and password are required'
+        error: 'Email and password are required',
+        message: 'Please provide both email and password to log in.',
+        code: 'MISSING_CREDENTIALS'
       });
     }
 
@@ -189,7 +207,9 @@ export async function login(req, res) {
 
     if (!user) {
       return res.status(401).json({
-        error: 'Invalid email or password'
+        error: 'Invalid email or password',
+        message: 'The email or password you entered is incorrect. Please try again.',
+        code: 'INVALID_CREDENTIALS'
       });
     }
 
@@ -198,14 +218,18 @@ export async function login(req, res) {
 
     if (!isValidPassword) {
       return res.status(401).json({
-        error: 'Invalid email or password'
+        error: 'Invalid email or password',
+        message: 'The email or password you entered is incorrect. Please try again.',
+        code: 'INVALID_CREDENTIALS'
       });
     }
 
     // Check if email is verified
     if (!user.emailVerified) {
       return res.status(403).json({
-        error: 'Please verify your email to continue'
+        error: 'Email not verified',
+        message: 'Please verify your email before logging in. Check your inbox for the verification link.',
+        code: 'EMAIL_NOT_VERIFIED'
       });
     }
 
