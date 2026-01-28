@@ -27,7 +27,9 @@ export async function requireAuth(req, res, next) {
 
     if (!authHeader) {
       return res.status(401).json({
-        error: 'No authorization token provided'
+        error: 'No authorization token provided',
+        message: 'Please log in to access this resource.',
+        code: 'NO_TOKEN'
       });
     }
 
@@ -36,7 +38,9 @@ export async function requireAuth(req, res, next) {
 
     if (parts.length !== 2 || parts[0] !== 'Bearer') {
       return res.status(401).json({
-        error: 'Invalid authorization header format. Expected: Bearer <token>'
+        error: 'Invalid authorization header format. Expected: Bearer <token>',
+        message: 'Authentication failed. Please log in again.',
+        code: 'INVALID_AUTH_FORMAT'
       });
     }
 
@@ -49,12 +53,16 @@ export async function requireAuth(req, res, next) {
     } catch (error) {
       if (error.name === 'TokenExpiredError') {
         return res.status(401).json({
-          error: 'Token has expired'
+          error: 'Token has expired',
+          message: 'Your session has expired. Please log in again.',
+          code: 'TOKEN_EXPIRED'
         });
       }
       if (error.name === 'JsonWebTokenError') {
         return res.status(401).json({
-          error: 'Invalid token'
+          error: 'Invalid token',
+          message: 'Authentication failed. Please log in again.',
+          code: 'INVALID_TOKEN'
         });
       }
       throw error;
@@ -77,7 +85,9 @@ export async function requireAuth(req, res, next) {
 
     if (!user) {
       return res.status(401).json({
-        error: 'User not found'
+        error: 'User not found',
+        message: 'Your account could not be found. Please log in again.',
+        code: 'USER_NOT_FOUND'
       });
     }
 
@@ -89,7 +99,9 @@ export async function requireAuth(req, res, next) {
   } catch (error) {
     console.error('Auth middleware error:', error);
     return res.status(500).json({
-      error: 'Internal server error during authentication'
+      error: 'Internal server error during authentication',
+      message: 'An unexpected error occurred. Please try again later.',
+      code: 'SERVER_ERROR'
     });
   }
 }
@@ -180,7 +192,9 @@ export function requireVerified(req, res, next) {
     // This middleware must be used after requireAuth
     if (!req.user) {
       return res.status(401).json({
-        error: 'Authentication required'
+        error: 'Authentication required',
+        message: 'Please log in to access this resource.',
+        code: 'AUTH_REQUIRED'
       });
     }
 
@@ -196,7 +210,9 @@ export function requireVerified(req, res, next) {
   } catch (error) {
     console.error('Verified middleware error:', error);
     return res.status(500).json({
-      error: 'Internal server error during verification check'
+      error: 'Internal server error during verification check',
+      message: 'An unexpected error occurred. Please try again later.',
+      code: 'SERVER_ERROR'
     });
   }
 }

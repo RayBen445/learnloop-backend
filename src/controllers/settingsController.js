@@ -40,7 +40,9 @@ export async function getCurrentUser(req, res) {
 
     if (!user) {
       return res.status(404).json({
-        error: 'User not found'
+        error: 'User not found',
+        message: 'Your account could not be found.',
+        code: 'USER_NOT_FOUND'
       });
     }
 
@@ -49,7 +51,9 @@ export async function getCurrentUser(req, res) {
   } catch (error) {
     console.error('Get current user error:', error);
     return res.status(500).json({
-      error: 'Internal server error while fetching user'
+      error: 'Internal server error while fetching user',
+      message: 'An unexpected error occurred. Please try again later.',
+      code: 'SERVER_ERROR'
     });
   }
 }
@@ -140,7 +144,9 @@ export async function updateProfile(req, res) {
       const validation = validateUsername(username);
       if (!validation.valid) {
         return res.status(400).json({
-          error: validation.error
+          error: validation.error,
+          message: validation.error,
+          code: 'INVALID_USERNAME'
         });
       }
 
@@ -153,7 +159,9 @@ export async function updateProfile(req, res) {
 
       if (existingUser && existingUser.id !== userId) {
         return res.status(409).json({
-          error: 'Username is already taken'
+          error: 'Username is already taken',
+          message: 'This username is already in use. Please choose a different username.',
+          code: 'USERNAME_EXISTS'
         });
       }
 
@@ -165,7 +173,9 @@ export async function updateProfile(req, res) {
       const validation = validateBio(bio);
       if (!validation.valid) {
         return res.status(400).json({
-          error: validation.error
+          error: validation.error,
+          message: validation.error,
+          code: 'INVALID_BIO'
         });
       }
 
@@ -176,7 +186,9 @@ export async function updateProfile(req, res) {
     // Check if there's anything to update
     if (Object.keys(updateData).length === 0) {
       return res.status(400).json({
-        error: 'No fields to update. Provide username or bio.'
+        error: 'No fields to update. Provide username or bio.',
+        message: 'Please provide at least one field to update.',
+        code: 'NO_FIELDS_TO_UPDATE'
       });
     }
 
@@ -205,12 +217,16 @@ export async function updateProfile(req, res) {
     // Handle unique constraint violation
     if (error.code === 'P2002') {
       return res.status(409).json({
-        error: 'Username is already taken'
+        error: 'Username is already taken',
+        message: 'This username is already in use. Please choose a different username.',
+        code: 'USERNAME_EXISTS'
       });
     }
 
     return res.status(500).json({
-      error: 'Internal server error while updating profile'
+      error: 'Internal server error while updating profile',
+      message: 'An unexpected error occurred. Please try again later.',
+      code: 'SERVER_ERROR'
     });
   }
 }
