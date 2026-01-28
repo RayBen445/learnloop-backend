@@ -7,6 +7,7 @@
 
 import express from 'express';
 import authRoutes from './src/routes/authRoutes.js';
+import usersRoutes from './src/routes/usersRoutes.js';
 import topicsRoutes from './src/routes/topicsRoutes.js';
 import postsRoutes from './src/routes/postsRoutes.js';
 import commentsRoutes from './src/routes/commentsRoutes.js';
@@ -35,6 +36,7 @@ app.get('/health', (req, res) => {
 
 // API Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/users', usersRoutes);
 app.use('/api/topics', topicsRoutes);
 app.use('/api/posts', postsRoutes);
 app.use('/api/comments', commentsRoutes);
@@ -69,6 +71,8 @@ app.listen(PORT, () => {
   console.log(`\n🔐 Auth endpoints:`);
   console.log(`   POST /api/auth/register`);
   console.log(`   POST /api/auth/login`);
+  console.log(`\n👤 User endpoints:`);
+  console.log(`   GET  /api/users/:id`);
   console.log(`\n📂 Topics endpoints:`);
   console.log(`   GET  /api/topics`);
   console.log(`   GET  /api/topics/:id`);

@@ -154,6 +154,11 @@ POST /api/auth/register
 POST /api/auth/login
 ```
 
+### Users
+```
+GET /api/users/:id
+```
+
 ### Topics
 ```
 GET /api/topics
@@ -217,12 +222,13 @@ GET    /api/feed/topic/:topicId (optional auth)
 GET    /api/feed/author/:authorId (optional auth)
 ```
 
-See [AUTH.md](./AUTH.md) for authentication, [POSTS.md](./POSTS.md) for posts, [COMMENTS.md](./COMMENTS.md) for comments, [VOTES.md](./VOTES.md) for votes, [SAVED_POSTS.md](./SAVED_POSTS.md) for saved posts, [RATE_LIMITING.md](./RATE_LIMITING.md) for rate limiting, [MODERATION.md](./MODERATION.md) for moderation, and [FEEDS.md](./FEEDS.md) for feed documentation.
+See [AUTH.md](./AUTH.md) for authentication, [USERS.md](./USERS.md) for users, [POSTS.md](./POSTS.md) for posts, [COMMENTS.md](./COMMENTS.md) for comments, [VOTES.md](./VOTES.md) for votes, [SAVED_POSTS.md](./SAVED_POSTS.md) for saved posts, [RATE_LIMITING.md](./RATE_LIMITING.md) for rate limiting, [MODERATION.md](./MODERATION.md) for moderation, and [FEEDS.md](./FEEDS.md) for feed documentation.
 
 ## Documentation
 
 - **[SETUP.md](./SETUP.md)** - Database setup and Prisma configuration
 - **[AUTH.md](./AUTH.md)** - Authentication and authorization guide
+- **[USERS.md](./USERS.md)** - Users (Public Profiles) API documentation
 - **[POSTS.md](./POSTS.md)** - Topics and Posts API documentation
 - **[COMMENTS.md](./COMMENTS.md)** - Comments API documentation
 - **[VOTES.md](./VOTES.md)** - Votes and Learning Score API documentation
@@ -246,7 +252,8 @@ learnloop-backend/
 │   │   ├── savedPostsController.js  # Saved Posts logic
 │   │   ├── reportsController.js     # Reports logic
 │   │   ├── adminController.js       # Admin moderation logic
-│   │   └── feedController.js        # Feed logic
+│   │   ├── feedController.js        # Feed logic
+│   │   └── usersController.js       # Users logic
 │   ├── middleware/
 │   │   ├── authMiddleware.js        # JWT verification
 │   │   ├── adminMiddleware.js       # Admin verification
@@ -255,6 +262,7 @@ learnloop-backend/
 │   │   └── moderationUtils.js       # Moderation helpers
 │   └── routes/
 │       ├── authRoutes.js            # Auth endpoints
+│       ├── usersRoutes.js           # Users endpoints
 │       ├── topicsRoutes.js          # Topics endpoints
 │       ├── postsRoutes.js           # Posts endpoints
 │       ├── commentsRoutes.js        # Comments endpoints
