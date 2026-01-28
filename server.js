@@ -50,15 +50,10 @@ const corsOptions = {
   origin: function (origin, callback) {
     const isProduction = process.env.NODE_ENV === 'production';
 
-    // Reject requests with no origin in production (except health check which is before CORS)
-    // Allow in development for tools like Postman, curl
+    // Allow requests with no origin header (server-to-server, curl, Postman, etc.)
+    // These are not subject to CORS as they're not browser-based requests
     if (!origin) {
-      if (!isProduction) {
-        return callback(null, true);
-      }
-      // Log rejected no-origin requests for security monitoring
-      console.warn('CORS: Rejected request with no origin header in production');
-      return callback(null, false);
+      return callback(null, true);
     }
 
     // Build allowed patterns based on environment
@@ -89,7 +84,8 @@ const corsOptions = {
     if (isAllowed) {
       callback(null, true);
     } else {
-      // Return false instead of throwing error for proper CORS rejection
+      // Log rejected requests with disallowed origin for security monitoring
+      console.warn(`CORS: Rejected request from disallowed origin: ${origin}`);
       callback(null, false);
     }
   },
