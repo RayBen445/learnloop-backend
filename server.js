@@ -153,6 +153,7 @@ app.listen(PORT, async () => {
   console.log(`\n⚙️  Settings endpoints:`);
   console.log(`   GET  /api/me (optional auth)`);
   console.log(`   PUT  /api/me (auth required)`);
+  console.log(`   PUT  /api/me/password (auth required)`);
   console.log(`\n👤 User endpoints:`);
   console.log(`   GET  /api/users/:id`);
   console.log(`\n📂 Topics endpoints:`);

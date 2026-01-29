@@ -193,6 +193,31 @@ export const updateLimiter = rateLimit({
 });
 
 /**
+ * Rate limiter for account settings operations (profile updates, password changes)
+ * - User-based limiting when authenticated, IP-based otherwise
+ * - 30 operations per hour
+ * - Exempts SYSTEM and BOT users
+ */
+export const accountSettingsLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 30, // 30 operations per window
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: skipSystemAndBotUsers,
+  skipFailedRequests: true,
+  handler: (req, res) => {
+    const retryAfter = Math.ceil((req.rateLimit.resetTime.getTime() - Date.now()) / 1000);
+    res.status(429)
+      .set('Retry-After', retryAfter)
+      .json({
+        error: 'Too many account settings operations',
+        message: 'You have reached the account settings operation limit. Please try again later.',
+        retryAfter
+      });
+  }
+});
+
+/**
  * Rate limiter for delete operations
  * - User-based limiting when authenticated, IP-based otherwise
  * - 30 deletes per hour

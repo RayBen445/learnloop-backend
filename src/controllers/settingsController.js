@@ -5,6 +5,7 @@
  * Allows users to view and update their own profile information.
  */
 
+import bcrypt from 'bcrypt';
 import prisma from '../../prisma.js';
 
 // Validation constants
@@ -12,6 +13,8 @@ const MIN_USERNAME_LENGTH = 3;
 const MAX_USERNAME_LENGTH = 30;
 const MAX_BIO_LENGTH = 160;
 const USERNAME_REGEX = /^[a-zA-Z0-9_]+$/;
+const MIN_PASSWORD_LENGTH = 8;
+const SALT_ROUNDS = 10;
 
 /**
  * Get current authenticated user's profile
@@ -231,6 +234,120 @@ export async function updateProfile(req, res) {
 
     return res.status(500).json({
       error: 'Internal server error while updating profile',
+      message: 'An unexpected error occurred. Please try again later.',
+      code: 'SERVER_ERROR'
+    });
+  }
+}
+
+/**
+ * Change password for current authenticated user
+ * 
+ * PUT /api/me/password
+ * Requires authentication
+ * 
+ * Body:
+ * - currentPassword: string (must match existing password)
+ * - newPassword: string (min 8 chars, must be different from current)
+ * 
+ * Returns success message on password update
+ */
+export async function changePassword(req, res) {
+  try {
+    const userId = req.user.id;
+    const { currentPassword, newPassword } = req.body;
+
+    // Validate required fields
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        error: 'Current password and new password are required',
+        message: 'Please provide both your current password and new password.',
+        code: 'MISSING_FIELDS'
+      });
+    }
+
+    // Validate types
+    if (typeof currentPassword !== 'string' || typeof newPassword !== 'string') {
+      return res.status(400).json({
+        error: 'Passwords must be strings',
+        message: 'Invalid password format.',
+        code: 'INVALID_TYPE'
+      });
+    }
+
+    // Validate new password length
+    if (newPassword.length < MIN_PASSWORD_LENGTH) {
+      return res.status(400).json({
+        error: `New password must be at least ${MIN_PASSWORD_LENGTH} characters long`,
+        message: `Please choose a stronger password with at least ${MIN_PASSWORD_LENGTH} characters.`,
+        code: 'WEAK_PASSWORD'
+      });
+    }
+
+    // Get user with password hash
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        hashedPassword: true
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        error: 'User not found',
+        message: 'Your account could not be found.',
+        code: 'USER_NOT_FOUND'
+      });
+    }
+
+    // Verify current password
+    const isValidPassword = await bcrypt.compare(currentPassword, user.hashedPassword);
+
+    if (!isValidPassword) {
+      // Log failed attempt (without sensitive data)
+      console.warn(`Failed password change attempt for user ${userId}`);
+      
+      return res.status(401).json({
+        error: 'Current password is incorrect',
+        message: 'The current password you entered is incorrect.',
+        code: 'INVALID_CURRENT_PASSWORD'
+      });
+    }
+
+    // Validate new password is different from current password
+    // Use bcrypt.compare to avoid timing attacks
+    const isSamePassword = await bcrypt.compare(newPassword, user.hashedPassword);
+
+    if (isSamePassword) {
+      return res.status(400).json({
+        error: 'New password must be different from current password',
+        message: 'Please choose a different password.',
+        code: 'SAME_PASSWORD'
+      });
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, SALT_ROUNDS);
+
+    // Update password in database
+    await prisma.user.update({
+      where: { id: userId },
+      data: { hashedPassword }
+    });
+
+    // Log successful password change (without sensitive data)
+    console.log(`Password changed successfully for user ${userId}`);
+
+    return res.status(200).json({
+      message: 'Password updated successfully'
+    });
+
+  } catch (error) {
+    console.error('Change password error:', error);
+    
+    return res.status(500).json({
+      error: 'Internal server error while changing password',
       message: 'An unexpected error occurred. Please try again later.',
       code: 'SERVER_ERROR'
     });
