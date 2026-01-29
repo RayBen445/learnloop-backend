@@ -28,10 +28,12 @@ const MIN_PASSWORD_LENGTH = 8;
  * - Unique username
  * - Password must be at least 8 characters
  * - Password is hashed before storage
- * - Creates unverified user (isVerified: false)
- * - Generates verification token
- * - Sends verification email
- * - No auto-login (token not returned)
+ * 
+ * Feature Flag: REQUIRE_EMAIL_VERIFICATION
+ * - When "true": Creates unverified user (isVerified: false), generates token, sends verification email
+ * - When not "true" (default): Auto-verifies user (isVerified: true), no email sent
+ * 
+ * - No auto-login (token not returned in either case)
  */
 export async function register(req, res) {
   try {
@@ -121,15 +123,20 @@ export async function register(req, res) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
 
-    // Create user with isVerified and emailVerified: false
+    // Feature flag: REQUIRE_EMAIL_VERIFICATION controls whether email verification is required
+    // When disabled (not "true"), auto-verify users on registration
+    const requireEmailVerification = process.env.REQUIRE_EMAIL_VERIFICATION === 'true';
+    const emailVerified = !requireEmailVerification;
+
+    // Create user with isVerified and emailVerified
     const user = await prisma.user.create({
       data: {
         email,
         username,
         hashedPassword,
         learningScore: 0,
-        isVerified: false,
-        emailVerified: false
+        isVerified: emailVerified,
+        emailVerified: emailVerified
       },
       select: {
         id: true,
@@ -142,31 +149,40 @@ export async function register(req, res) {
       }
     });
 
-    // Delete any existing verification tokens for this user (ensure one active token)
-    await prisma.verificationToken.deleteMany({
-      where: { userId: user.id }
-    });
+    // Only send verification email if email verification is required
+    if (requireEmailVerification) {
+      // Delete any existing verification tokens for this user (ensure one active token)
+      await prisma.verificationToken.deleteMany({
+        where: { userId: user.id }
+      });
 
-    // Generate verification token
-    const token = generateVerificationToken();
-    const hashedToken = hashToken(token);
-    const expiresAt = getTokenExpiration(15); // 15 minutes
+      // Generate verification token
+      const token = generateVerificationToken();
+      const hashedToken = hashToken(token);
+      const expiresAt = getTokenExpiration(15); // 15 minutes
 
-    // Store hashed verification token
-    await prisma.verificationToken.create({
-      data: {
-        userId: user.id,
-        token: hashedToken,
-        expiresAt
-      }
-    });
+      // Store hashed verification token
+      await prisma.verificationToken.create({
+        data: {
+          userId: user.id,
+          token: hashedToken,
+          expiresAt
+        }
+      });
 
-    // Send verification email with plain token
-    await sendVerificationEmail(email, username, token);
+      // Send verification email with plain token
+      await sendVerificationEmail(email, username, token);
 
-    // Return user without JWT token (no auto-login)
+      // Return user without JWT token (no auto-login)
+      return res.status(201).json({
+        message: 'Verification email sent. Please check your inbox.',
+        user
+      });
+    }
+
+    // If verification is disabled, return success message
     return res.status(201).json({
-      message: 'Verification email sent. Please check your inbox.',
+      message: 'Registration successful. You can now log in.',
       user
     });
 
@@ -205,7 +221,11 @@ export async function register(req, res) {
  * 
  * Requirements:
  * - Email + password authentication
- * - Email must be verified (emailVerified: true)
+ * 
+ * Feature Flag: REQUIRE_EMAIL_VERIFICATION
+ * - When "true": Email must be verified (emailVerified: true) to login
+ * - When not "true" (default): Email verification check is skipped
+ * 
  * - Returns JWT token on success
  * - Token includes userId only
  */
@@ -246,8 +266,11 @@ export async function login(req, res) {
       });
     }
 
-    // Check if email is verified
-    if (!user.emailVerified) {
+    // Feature flag: REQUIRE_EMAIL_VERIFICATION controls whether email verification is required
+    // Only check email verification if the feature flag is enabled
+    const requireEmailVerification = process.env.REQUIRE_EMAIL_VERIFICATION === 'true';
+    
+    if (requireEmailVerification && !user.emailVerified) {
       return res.status(403).json({
         error: 'Email not verified',
         message: 'Please verify your email before logging in. Check your inbox for the verification link.',
