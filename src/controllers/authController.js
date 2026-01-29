@@ -28,10 +28,12 @@ const MIN_PASSWORD_LENGTH = 8;
  * - Unique username
  * - Password must be at least 8 characters
  * - Password is hashed before storage
- * - Creates unverified user (isVerified: false)
- * - Generates verification token
- * - Sends verification email
- * - No auto-login (token not returned)
+ * 
+ * Feature Flag: REQUIRE_EMAIL_VERIFICATION
+ * - When "true": Creates unverified user (isVerified: false), generates token, sends verification email
+ * - When not "true" (default): Auto-verifies user (isVerified: true), no email sent
+ * 
+ * - No auto-login (token not returned in either case)
  */
 export async function register(req, res) {
   try {
@@ -40,7 +42,9 @@ export async function register(req, res) {
     // Validation
     if (!email || !username || !password) {
       return res.status(400).json({
-        error: 'Email, username, and password are required'
+        error: 'Email, username, and password are required',
+        message: 'Please provide all required fields to create your account.',
+        code: 'MISSING_FIELDS'
       });
     }
 
@@ -48,7 +52,9 @@ export async function register(req, res) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return res.status(400).json({
-        error: 'Invalid email format'
+        error: 'Invalid email format',
+        message: 'Please enter a valid email address.',
+        code: 'INVALID_EMAIL'
       });
     }
 
@@ -56,27 +62,35 @@ export async function register(req, res) {
     const usernameRegex = /^[a-zA-Z0-9_]{3,30}$/;
     if (!usernameRegex.test(username)) {
       return res.status(400).json({
-        error: 'Username must be 3-30 characters and contain only letters, numbers, and underscores'
+        error: 'Username must be 3-30 characters and contain only letters, numbers, and underscores',
+        message: 'Please choose a username between 3-30 characters using only letters, numbers, and underscores.',
+        code: 'INVALID_USERNAME'
       });
     }
 
     // Reject weak passwords
     if (password.length < MIN_PASSWORD_LENGTH) {
       return res.status(400).json({
-        error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters long`
+        error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters long`,
+        message: `Please choose a stronger password with at least ${MIN_PASSWORD_LENGTH} characters.`,
+        code: 'WEAK_PASSWORD'
       });
     }
 
     // Check for common weak patterns
     if (/^(.)\1+$/.test(password)) {
       return res.status(400).json({
-        error: 'Password is too weak (repeated characters)'
+        error: 'Password is too weak (repeated characters)',
+        message: 'Please choose a stronger password without repeated characters.',
+        code: 'WEAK_PASSWORD'
       });
     }
 
     if (/^(password|12345678|qwerty)$/i.test(password)) {
       return res.status(400).json({
-        error: 'Password is too weak (common password)'
+        error: 'Password is too weak (common password)',
+        message: 'This password is too common. Please choose a unique, stronger password.',
+        code: 'WEAK_PASSWORD'
       });
     }
 
@@ -87,7 +101,9 @@ export async function register(req, res) {
 
     if (existingEmail) {
       return res.status(409).json({
-        error: 'Email already registered'
+        error: 'Email already registered',
+        message: 'This email is already in use. Please use a different email or try logging in.',
+        code: 'EMAIL_EXISTS'
       });
     }
 
@@ -98,22 +114,29 @@ export async function register(req, res) {
 
     if (existingUsername) {
       return res.status(409).json({
-        error: 'Username already taken'
+        error: 'Username already taken',
+        message: 'This username is already in use. Please choose a different username.',
+        code: 'USERNAME_EXISTS'
       });
     }
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
 
-    // Create user with isVerified and emailVerified: false
+    // Feature flag: REQUIRE_EMAIL_VERIFICATION controls whether email verification is required
+    // When disabled (not "true"), auto-verify users on registration
+    const requireEmailVerification = process.env.REQUIRE_EMAIL_VERIFICATION === 'true';
+    const emailVerified = !requireEmailVerification;
+
+    // Create user with isVerified and emailVerified
     const user = await prisma.user.create({
       data: {
         email,
         username,
         hashedPassword,
         learningScore: 0,
-        isVerified: false,
-        emailVerified: false
+        isVerified: emailVerified,
+        emailVerified: emailVerified
       },
       select: {
         id: true,
@@ -126,38 +149,69 @@ export async function register(req, res) {
       }
     });
 
-    // Delete any existing verification tokens for this user (ensure one active token)
-    await prisma.verificationToken.deleteMany({
-      where: { userId: user.id }
-    });
+    // Only send verification email if email verification is required
+    if (requireEmailVerification) {
+      // Delete any existing verification tokens for this user (ensure one active token)
+      await prisma.verificationToken.deleteMany({
+        where: { userId: user.id }
+      });
 
-    // Generate verification token
-    const token = generateVerificationToken();
-    const hashedToken = hashToken(token);
-    const expiresAt = getTokenExpiration(15); // 15 minutes
+      // Generate verification token
+      const token = generateVerificationToken();
+      const hashedToken = hashToken(token);
+      const expiresAt = getTokenExpiration(15); // 15 minutes
 
-    // Store hashed verification token
-    await prisma.verificationToken.create({
-      data: {
-        userId: user.id,
-        token: hashedToken,
-        expiresAt
-      }
-    });
+      // Store hashed verification token
+      await prisma.verificationToken.create({
+        data: {
+          userId: user.id,
+          token: hashedToken,
+          expiresAt
+        }
+      });
 
-    // Send verification email with plain token
-    await sendVerificationEmail(email, username, token);
+      // Send verification email with plain token
+      await sendVerificationEmail(email, username, token);
 
-    // Return user without JWT token (no auto-login)
+      // Return user without JWT token (no auto-login)
+      return res.status(201).json({
+        message: 'Verification email sent. Please check your inbox.',
+        user
+      });
+    }
+
+    // If verification is disabled, return success message
     return res.status(201).json({
-      message: 'Verification email sent. Please check your inbox.',
+      message: 'Registration successful. You can now log in.',
       user
     });
 
   } catch (error) {
     console.error('Registration error:', error);
+    
+    // Handle unique constraint violation (race condition)
+    if (error.code === 'P2002') {
+      const field = error.meta?.target?.[0];
+      if (field === 'email') {
+        return res.status(409).json({
+          error: 'Email already registered',
+          message: 'This email is already in use. Please use a different email or try logging in.',
+          code: 'EMAIL_EXISTS'
+        });
+      }
+      if (field === 'username') {
+        return res.status(409).json({
+          error: 'Username already taken',
+          message: 'This username is already in use. Please choose a different username.',
+          code: 'USERNAME_EXISTS'
+        });
+      }
+    }
+    
     return res.status(500).json({
-      error: 'Internal server error during registration'
+      error: 'Internal server error during registration',
+      message: 'An unexpected error occurred. Please try again later.',
+      code: 'SERVER_ERROR'
     });
   }
 }
@@ -167,7 +221,11 @@ export async function register(req, res) {
  * 
  * Requirements:
  * - Email + password authentication
- * - Email must be verified (emailVerified: true)
+ * 
+ * Feature Flag: REQUIRE_EMAIL_VERIFICATION
+ * - When "true": Email must be verified (emailVerified: true) to login
+ * - When not "true" (default): Email verification check is skipped
+ * 
  * - Returns JWT token on success
  * - Token includes userId only
  */
@@ -178,7 +236,9 @@ export async function login(req, res) {
     // Validation
     if (!email || !password) {
       return res.status(400).json({
-        error: 'Email and password are required'
+        error: 'Email and password are required',
+        message: 'Please provide both email and password to log in.',
+        code: 'MISSING_CREDENTIALS'
       });
     }
 
@@ -189,7 +249,9 @@ export async function login(req, res) {
 
     if (!user) {
       return res.status(401).json({
-        error: 'Invalid email or password'
+        error: 'Invalid email or password',
+        message: 'The email or password you entered is incorrect. Please try again.',
+        code: 'INVALID_CREDENTIALS'
       });
     }
 
@@ -198,14 +260,21 @@ export async function login(req, res) {
 
     if (!isValidPassword) {
       return res.status(401).json({
-        error: 'Invalid email or password'
+        error: 'Invalid email or password',
+        message: 'The email or password you entered is incorrect. Please try again.',
+        code: 'INVALID_CREDENTIALS'
       });
     }
 
-    // Check if email is verified
-    if (!user.emailVerified) {
+    // Feature flag: REQUIRE_EMAIL_VERIFICATION controls whether email verification is required
+    // Only check email verification if the feature flag is enabled
+    const requireEmailVerification = process.env.REQUIRE_EMAIL_VERIFICATION === 'true';
+    
+    if (requireEmailVerification && !user.emailVerified) {
       return res.status(403).json({
-        error: 'Please verify your email to continue'
+        error: 'Email not verified',
+        message: 'Please verify your email before logging in. Check your inbox for the verification link.',
+        code: 'EMAIL_NOT_VERIFIED'
       });
     }
 
@@ -233,7 +302,9 @@ export async function login(req, res) {
   } catch (error) {
     console.error('Login error:', error);
     return res.status(500).json({
-      error: 'Internal server error during login'
+      error: 'Internal server error during login',
+      message: 'An unexpected error occurred. Please try again later.',
+      code: 'SERVER_ERROR'
     });
   }
 }
@@ -256,7 +327,9 @@ export async function verifyEmail(req, res) {
     // Validation
     if (!token) {
       return res.status(400).json({
-        error: 'Verification token is required'
+        error: 'Verification token is required',
+        message: 'Please provide a verification token from your email.',
+        code: 'MISSING_TOKEN'
       });
     }
 
@@ -271,7 +344,9 @@ export async function verifyEmail(req, res) {
 
     if (!verificationToken) {
       return res.status(400).json({
-        error: 'Invalid verification token'
+        error: 'Invalid verification token',
+        message: 'This verification link is invalid. Please request a new verification email.',
+        code: 'INVALID_TOKEN'
       });
     }
 
@@ -285,7 +360,9 @@ export async function verifyEmail(req, res) {
     // Check if token has expired
     if (isTokenExpired(verificationToken.expiresAt)) {
       return res.status(400).json({
-        error: 'Verification token has expired. Please request a new one.'
+        error: 'Verification token has expired',
+        message: 'This verification link has expired. Please request a new verification email.',
+        code: 'TOKEN_EXPIRED'
       });
     }
 
@@ -330,7 +407,9 @@ export async function verifyEmail(req, res) {
   } catch (error) {
     console.error('Email verification error:', error);
     return res.status(500).json({
-      error: 'Internal server error during email verification'
+      error: 'Internal server error during email verification',
+      message: 'An unexpected error occurred. Please try again later.',
+      code: 'SERVER_ERROR'
     });
   }
 }
@@ -352,7 +431,9 @@ export async function resendVerificationEmail(req, res) {
     // Validation
     if (!email) {
       return res.status(400).json({
-        error: 'Email is required'
+        error: 'Email is required',
+        message: 'Please provide your email address to resend the verification email.',
+        code: 'MISSING_EMAIL'
       });
     }
 
@@ -371,7 +452,9 @@ export async function resendVerificationEmail(req, res) {
     // Check if already verified
     if (user.emailVerified) {
       return res.status(400).json({
-        error: 'Email is already verified'
+        error: 'Email is already verified',
+        message: 'Your email has already been verified. You can log in now.',
+        code: 'ALREADY_VERIFIED'
       });
     }
 
@@ -404,7 +487,9 @@ export async function resendVerificationEmail(req, res) {
   } catch (error) {
     console.error('Resend verification email error:', error);
     return res.status(500).json({
-      error: 'Internal server error while sending verification email'
+      error: 'Internal server error while sending verification email',
+      message: 'An unexpected error occurred. Please try again later.',
+      code: 'SERVER_ERROR'
     });
   }
 }

@@ -7,7 +7,7 @@
 
 import express from 'express';
 import { register, login, verifyEmail, resendVerificationEmail } from '../controllers/authController.js';
-import { authLimiter } from '../middleware/rateLimiters.js';
+import { registerLimiter, loginLimiter, authLimiter } from '../middleware/rateLimiters.js';
 
 const router = express.Router();
 
@@ -15,7 +15,7 @@ const router = express.Router();
  * POST /api/auth/register
  * Register a new user
  * 
- * Rate limit: 5 requests per 15 minutes (IP-based)
+ * Rate limit: 10 requests per 15 minutes (IP-based)
  * 
  * Body:
  * - email: string (unique, valid email format)
@@ -28,13 +28,13 @@ const router = express.Router();
  * - 409: Email or username already exists
  * - 429: Too many requests
  */
-router.post('/register', authLimiter, register);
+router.post('/register', registerLimiter, register);
 
 /**
  * POST /api/auth/login
  * Login with email and password
  * 
- * Rate limit: 5 requests per 15 minutes (IP-based)
+ * Rate limit: 20 requests per 15 minutes (IP-based)
  * 
  * Body:
  * - email: string
@@ -45,7 +45,7 @@ router.post('/register', authLimiter, register);
  * - 401: Invalid credentials
  * - 429: Too many requests
  */
-router.post('/login', authLimiter, login);
+router.post('/login', loginLimiter, login);
 
 /**
  * POST /api/auth/verify-email

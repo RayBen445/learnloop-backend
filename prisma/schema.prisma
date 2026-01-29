@@ -17,6 +17,7 @@ datasource db {
 // Stores user accounts with authentication and gamification
 // - UUID for better security and scalability
 // - learningScore tracks user engagement and quality contributions
+// - role determines user type (USER, SYSTEM, BOT)
 model User {
   id             String   @id @default(uuid()) @db.Uuid
   email          String   @unique
@@ -24,6 +25,7 @@ model User {
   hashedPassword String
   bio            String?  @db.VarChar(160) // Optional bio, max 160 characters
   learningScore  Int      @default(0)
+  role           UserRole @default(USER) // User role: USER (default), SYSTEM, or BOT
   isAdmin        Boolean  @default(false) // Phase 8: Admin flag for moderation
   isVerified     Boolean  @default(false) // Email verification status
   emailVerified  Boolean  @default(false) // Email verification status (alternative field name)
@@ -236,6 +238,12 @@ model Report {
 // ====================
 // ENUMS
 // ====================
+enum UserRole {
+  USER   // Regular user
+  SYSTEM // System user (exempt from rate limits)
+  BOT    // Bot user (exempt from rate limits)
+}
+
 enum VoteType {
   UPVOTE
 }

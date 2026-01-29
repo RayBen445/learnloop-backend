@@ -61,9 +61,10 @@ function createTransporter() {
  * @param {string} options.subject - Email subject
  * @param {string} options.text - Plain text content
  * @param {string} options.html - HTML content
+ * @param {string} options.replyTo - Reply-To email address (optional)
  * @returns {Promise<Object>} Result object with success status and info
  */
-export async function sendEmail({ to, subject, text, html }) {
+export async function sendEmail({ to, subject, text, html, replyTo }) {
   const transporter = createTransporter();
   const fromName = process.env.SMTP_FROM_NAME || 'Cool Shot Systems';
 
@@ -72,6 +73,9 @@ export async function sendEmail({ to, subject, text, html }) {
     console.log('\n========== EMAIL (Console Mode) ==========');
     console.log(`From: ${fromName}`);
     console.log(`To: ${to}`);
+    if (replyTo) {
+      console.log(`Reply-To: ${replyTo}`);
+    }
     console.log(`Subject: ${subject}`);
     console.log('---');
     console.log(text);
@@ -82,13 +86,20 @@ export async function sendEmail({ to, subject, text, html }) {
 
   // Send email via SMTP
   try {
-    const info = await transporter.sendMail({
+    const mailOptions = {
       from: `"${fromName}" <${transporter.fromEmail}>`,
       to,
       subject,
       text,
       html: html || text, // Use HTML if provided, otherwise fall back to text
-    });
+    };
+
+    // Add Reply-To header if provided
+    if (replyTo) {
+      mailOptions.replyTo = replyTo;
+    }
+
+    const info = await transporter.sendMail(mailOptions);
 
     console.log(`[Email Service] Email sent successfully to ${to} - Message ID: ${info.messageId}`);
     

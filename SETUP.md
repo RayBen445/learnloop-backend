@@ -267,14 +267,15 @@ ALLOWED_ORIGINS="https://app.example.com,https://www.example.com"
 **Development Mode (NODE_ENV not set or = "development"):**
 - ✅ Allows all Vercel deployments (https://*.vercel.app)
 - ✅ Allows localhost (http://localhost:*, http://127.0.0.1:*)
-- ✅ Allows requests with no origin (Postman, curl, etc.)
+- ✅ Allows requests with no origin (Postman, curl, server-to-server, etc.)
 
 **Production Mode (NODE_ENV = "production"):**
 - ✅ Allows all Vercel deployments (https://*.vercel.app)
 - ✅ Allows custom domains from ALLOWED_ORIGINS
+- ✅ Allows requests with no origin header (server-to-server, curl, etc.)
 - ❌ Blocks localhost origins (security)
-- ❌ Blocks requests with no origin header (security)
 - ❌ Requires HTTPS for all origins (except localhost in dev)
+- 🔍 Logs rejected requests with disallowed origins for security monitoring
 
 ### Vercel Deployment
 

@@ -18,28 +18,42 @@ import savedPostsRoutes from './src/routes/savedPostsRoutes.js';
 import reportsRoutes from './src/routes/reportsRoutes.js';
 import adminRoutes from './src/routes/adminRoutes.js';
 import feedRoutes from './src/routes/feedRoutes.js';
+import contactRoutes from './src/routes/contactRoutes.js';
+import { bootstrapSystemUsers } from './src/bootstrap.js';
 
 const app = express();
+
+// Middleware order is critical for proper functionality:
+// 1. Trust proxy - Must be first for rate limiting to work behind reverse proxies
+app.set('trust proxy', 1);
+
 const PORT = process.env.PORT || 3000;
 
+// Health check endpoint - Before CORS for Render health checks
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    message: 'LearnLoop Backend is running',
+    phase: 'Phase 9: Feed and Discovery',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // CORS Configuration
+// 2. CORS - Applied before body parsing for efficient preflight handling
 // Dynamic origin function to support:
-// - Vercel preview deployments (https://*.vercel.app)
+// - Vercel deployments (https://*.vercel.app including learnloop-frontend.vercel.app)
 // - localhost for development only
-// - Custom domains via ALLOWED_ORIGINS environment variable
-// - Future domain changes without code edits
+// - Custom domains via ALLOWED_ORIGINS environment variable (no code changes needed)
+// Note: Health check endpoint is before CORS to allow Render health checks
 const corsOptions = {
   origin: function (origin, callback) {
     const isProduction = process.env.NODE_ENV === 'production';
 
-    // Allow requests with no origin only in development (e.g., Postman, curl)
+    // Allow requests with no origin header (server-to-server, curl, Postman, etc.)
+    // These are not subject to CORS as they're not browser-based requests
     if (!origin) {
-      if (!isProduction) {
-        return callback(null, true);
-      }
-      // In production, log and reject no-origin requests for security monitoring
-      console.warn('CORS: Rejected request with no origin header in production');
-      return callback(null, false);
+      return callback(null, true);
     }
 
     // Build allowed patterns based on environment
@@ -70,12 +84,13 @@ const corsOptions = {
     if (isAllowed) {
       callback(null, true);
     } else {
-      // Return false instead of throwing error for proper CORS rejection
+      // Log rejected requests with disallowed origin for security monitoring
+      console.warn(`CORS: Rejected request from disallowed origin: ${origin}`);
       callback(null, false);
     }
   },
   credentials: true, // Allow cookies and authorization headers
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Allowed HTTP methods
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], // Allowed HTTP methods
   allowedHeaders: ['Content-Type', 'Authorization'], // Allow JSON and auth headers
   optionsSuccessStatus: 200, // Return 200 for OPTIONS preflight requests
   maxAge: 86400 // Cache preflight responses for 24 hours (improves performance)
@@ -84,19 +99,12 @@ const corsOptions = {
 // Apply CORS middleware before all routes
 app.use(cors(corsOptions));
 
-// Middleware
+// 3. Body parsers - Parse request bodies before routes
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'ok',
-    message: 'LearnLoop Backend is running',
-    phase: 'Phase 9: Feed and Discovery',
-    timestamp: new Date().toISOString()
-  });
-});
+// 4. Rate limiting - Applied per-route in individual route files (see src/routes/*)
+// 5. Routes - Defined below with route-specific rate limiters
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -110,6 +118,7 @@ app.use('/api/saved-posts', savedPostsRoutes);
 app.use('/api/reports', reportsRoutes); // Phase 8
 app.use('/api/admin', adminRoutes); // Phase 8
 app.use('/api/feed', feedRoutes); // Phase 9
+app.use('/api/contact', contactRoutes); // Contact form
 
 // 404 handler
 app.use((req, res) => {
@@ -129,18 +138,22 @@ app.use((err, req, res, next) => {
 });
 
 // Start server
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`🚀 LearnLoop Backend running on port ${PORT}`);
   console.log(`📚 Phase 9: Feed and Discovery`);
   console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+  
+  // Bootstrap system users
+  await bootstrapSystemUsers();
   console.log(`\n🔐 Auth endpoints:`);
   console.log(`   POST /api/auth/register`);
   console.log(`   POST /api/auth/login`);
   console.log(`   POST /api/auth/verify-email`);
   console.log(`   POST /api/auth/resend-verification`);
   console.log(`\n⚙️  Settings endpoints:`);
-  console.log(`   GET  /api/me (auth required)`);
+  console.log(`   GET  /api/me (optional auth)`);
   console.log(`   PUT  /api/me (auth required)`);
+  console.log(`   PUT  /api/me/password (auth required)`);
   console.log(`\n👤 User endpoints:`);
   console.log(`   GET  /api/users/:id`);
   console.log(`\n📂 Topics endpoints:`);
