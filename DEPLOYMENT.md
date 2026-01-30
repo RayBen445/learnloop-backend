@@ -35,9 +35,9 @@ This option deploys both the frontend and backend API to Vercel in a single depl
 3.  **Import your repository**.
 
 4.  **Configure Project:**
-    - **Framework Preset:** Other (Vercel will auto-detect the monorepo)
-    - **Root Directory:** Leave as `.` (root)
-    - **Build Command:** `npm run build`
+    - **Framework Preset:** Other (Vercel will auto-detect the monorepo structure)
+    - **Root Directory:** Leave as `.` (root) - This is critical!
+    - **Build Command:** Leave empty (Vercel auto-detects Next.js build)
     - **Output Directory:** Leave default
 
 5.  **Environment Variables (REQUIRED):**
@@ -67,10 +67,25 @@ This option deploys both the frontend and backend API to Vercel in a single depl
 6.  **Deploy:** Click "Deploy".
 
 7.  **Run Database Migrations:**
-    After the first deployment, you need to run Prisma migrations:
-    - In Vercel dashboard, go to your project
-    - Click on "Settings" -> "Functions"
-    - Or use Vercel CLI: `vercel env pull && npx prisma migrate deploy`
+    After the first deployment, you need to run Prisma migrations. There are two options:
+    
+    **Option A - Using Vercel CLI (Recommended):**
+    ```bash
+    # Install Vercel CLI
+    npm install -g vercel
+    
+    # Link to your project
+    vercel link
+    
+    # Pull environment variables
+    vercel env pull .env.local
+    
+    # Run migrations
+    npx prisma migrate deploy
+    ```
+    
+    **Option B - Direct Database Access:**
+    If you have direct database access, connect to your PostgreSQL database and run the migration SQL files from the `prisma/migrations` directory manually.
 
 8.  **URL:** Vercel will give you a URL (e.g., `your-project.vercel.app`).
     - Frontend: `https://your-project.vercel.app`
@@ -81,7 +96,7 @@ This option deploys both the frontend and backend API to Vercel in a single depl
 
 The `vercel.json` configuration:
 - Deploys the Next.js frontend from the `/frontend` directory
-- Deploys the Express backend as a serverless function via `/api/index.js`
+- Deploys the Express backend as a serverless function via `/api/[[...path]].js`
 - Routes `/api/*` and `/health` requests to the backend serverless function
 - Routes all other requests to the Next.js frontend
 

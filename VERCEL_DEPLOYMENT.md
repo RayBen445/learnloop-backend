@@ -54,14 +54,28 @@ Click "Deploy" and wait for the build to complete.
 
 ### Step 5: Run Database Migrations
 
-After the first successful deployment:
+After the first successful deployment, run Prisma migrations:
 
-1. Install Vercel CLI: `npm install -g vercel`
-2. Link your project: `vercel link`
-3. Pull environment variables: `vercel env pull`
-4. Run migrations: `npx prisma migrate deploy`
+**Option A - Using Vercel CLI (Recommended):**
+```bash
+# Install Vercel CLI
+npm install -g vercel
 
-OR connect to your database directly and run the migrations.
+# Link to your project
+vercel link
+
+# Pull environment variables
+vercel env pull .env.local
+
+# Run migrations
+npx prisma migrate deploy
+```
+
+**Option B - Direct Database Access:**
+If you have direct database access and your database allows external connections, you can connect directly and run migrations. However, this is not recommended for production environments.
+
+**Option C - Manual SQL Execution:**
+Connect to your database using a tool like pgAdmin or psql and manually run the SQL from the `prisma/migrations` directory.
 
 ### Step 6: Test Your Deployment
 

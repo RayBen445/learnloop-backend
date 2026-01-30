@@ -138,10 +138,10 @@ app.use((err, req, res, next) => {
 });
 
 // Bootstrap system users (for serverless environments)
-// This ensures system users exist even in serverless deployments
+// This runs during module initialization (cold start), not during request handling
+// The bootstrapSystemUsers function is idempotent, so it's safe to call on each cold start
 if (process.env.VERCEL) {
-  // In Vercel serverless environment, bootstrap on first request
-  // The bootstrapSystemUsers function is idempotent, so it's safe to call multiple times
+  // In Vercel serverless environment, bootstrap during module load
   bootstrapSystemUsers().catch(err => {
     console.error('Failed to bootstrap system users:', err);
   });
