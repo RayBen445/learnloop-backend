@@ -1,37 +1,105 @@
 # Deployment Guide
 
-This guide explains how to deploy the **LearnLoop** application. The recommended setup is:
+This guide explains how to deploy the **LearnLoop** application. You have two deployment options:
+
+## Option 1: Full Vercel Deployment (Recommended for Simplicity)
+- **Frontend + Backend:** Vercel (serverless functions for backend API)
+- **Database:** External PostgreSQL (Neon, Supabase, or Railway)
+
+## Option 2: Separate Deployments (Recommended for Scalability)
 - **Frontend:** Vercel (best for Next.js)
 - **Backend:** Render (best for Node.js + PostgreSQL)
-- **Auth & Data:** Firebase (Auth, Realtime Database)
+- **Database:** Render PostgreSQL
 
 ---
 
-## 1. Firebase Setup (Prerequisite)
+## Full Vercel Deployment (Option 1)
 
-Before deploying, ensure your Firebase project is configured:
+This option deploys both the frontend and backend API to Vercel in a single deployment.
 
-1.  **Authentication:**
-    - Go to Firebase Console -> Authentication -> Sign-in method.
-    - Enable **Email/Password**.
-    - Enable **Google** (setup OAuth consent screen if needed).
+### Prerequisites
+1.  **PostgreSQL Database:** Set up a PostgreSQL database on:
+    - [Neon](https://neon.tech) (free tier available)
+    - [Supabase](https://supabase.com) (free tier available)
+    - [Railway](https://railway.app)
+    - Or any other PostgreSQL provider
 
-2.  **Realtime Database:**
-    - Go to Firebase Console -> Realtime Database.
-    - Create a database.
-    - **Rules:** For development/testing, you can start with these rules (but secure them later!):
-      ```json
-      {
-        "rules": {
-          ".read": true,
-          ".write": true
-        }
-      }
-      ```
+2.  **Get Database URL:** Copy the connection string (e.g., `postgresql://user:password@host:5432/database`)
+
+### Deploy to Vercel
+
+1.  **Push your code** to GitHub.
+
+2.  **Log in to Vercel** (vercel.com) and click **"Add New..."** -> **"Project"**.
+
+3.  **Import your repository**.
+
+4.  **Configure Project:**
+    - **Framework Preset:** Other (Vercel will auto-detect the monorepo)
+    - **Root Directory:** Leave as `.` (root)
+    - **Build Command:** `npm run build`
+    - **Output Directory:** Leave default
+
+5.  **Environment Variables (REQUIRED):**
+    Add these in the Vercel project settings:
+    ```
+    DATABASE_URL=postgresql://user:password@host:5432/database
+    JWT_SECRET=your-random-secret-key-here
+    JWT_EXPIRES_IN=7d
+    NODE_ENV=production
+    ```
+    
+    Optional environment variables:
+    ```
+    ALLOWED_ORIGINS=https://your-custom-domain.com
+    SMTP_HOST=smtp.gmail.com
+    SMTP_PORT=587
+    SMTP_USER=your-email@gmail.com
+    SMTP_PASSWORD=your-app-password
+    EMAIL_FROM=noreply@yourdomain.com
+    ENABLE_EMAIL_VERIFICATION=true
+    SYSTEM_USER_EMAIL=system@yourdomain.com
+    SYSTEM_USER_PASSWORD=secure-password
+    BOT_USER_EMAIL=bot@yourdomain.com
+    BOT_USER_PASSWORD=secure-password
+    ```
+
+6.  **Deploy:** Click "Deploy".
+
+7.  **Run Database Migrations:**
+    After the first deployment, you need to run Prisma migrations:
+    - In Vercel dashboard, go to your project
+    - Click on "Settings" -> "Functions"
+    - Or use Vercel CLI: `vercel env pull && npx prisma migrate deploy`
+
+8.  **URL:** Vercel will give you a URL (e.g., `your-project.vercel.app`).
+    - Frontend: `https://your-project.vercel.app`
+    - Backend API: `https://your-project.vercel.app/api/*`
+    - Health Check: `https://your-project.vercel.app/health`
+
+### How It Works
+
+The `vercel.json` configuration:
+- Deploys the Next.js frontend from the `/frontend` directory
+- Deploys the Express backend as a serverless function via `/api/index.js`
+- Routes `/api/*` and `/health` requests to the backend serverless function
+- Routes all other requests to the Next.js frontend
+
+### Important Notes for Vercel Deployment
+
+1.  **Cold Starts:** Serverless functions may have cold start delays (1-3 seconds) on the first request.
+
+2.  **Timeouts:** Vercel serverless functions have a 10-second timeout on the Hobby plan (60 seconds on Pro).
+
+3.  **Database Connections:** Use connection pooling for PostgreSQL (Prisma handles this automatically).
+
+4.  **Environment Variables:** Make sure to set all required environment variables in Vercel project settings.
 
 ---
 
-## 2. Deploy Frontend to Vercel
+## Separate Vercel + Render Deployment (Option 2)
+
+### Deploy Frontend Only to Vercel
 
 1.  **Push your code** to GitHub.
 2.  **Log in to Vercel** (vercel.com) and click **"Add New..."** -> **"Project"**.
@@ -40,13 +108,11 @@ Before deploying, ensure your Firebase project is configured:
     - **Framework Preset:** Next.js (should be auto-detected)
     - **Root Directory:** Click "Edit" and select `frontend`.
 5.  **Environment Variables:**
-    - You don't need any special env vars for the frontend unless you have custom ones. The Firebase config is currently hardcoded in `frontend/lib/firebase.ts`. *Note: For production, it's better to use env vars.*
+    - Add `NEXT_PUBLIC_API_URL` pointing to your Render backend URL
 6.  **Deploy:** Click "Deploy".
 7.  **URL:** Vercel will give you a URL (e.g., `learnloop.vercel.app`).
 
----
-
-## 3. Deploy Backend to Render
+### Deploy Backend to Render
 
 1.  **Log in to Render** (render.com).
 2.  **Blueprints:**
