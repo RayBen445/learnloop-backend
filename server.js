@@ -137,63 +137,76 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start server
-app.listen(PORT, async () => {
-  console.log(`🚀 LearnLoop Backend running on port ${PORT}`);
-  console.log(`📚 Phase 9: Feed and Discovery`);
-  console.log(`🔗 Health check: http://localhost:${PORT}/health`);
-  
-  // Bootstrap system users
-  await bootstrapSystemUsers();
-  console.log(`\n🔐 Auth endpoints:`);
-  console.log(`   POST /api/auth/register`);
-  console.log(`   POST /api/auth/login`);
-  console.log(`   POST /api/auth/verify-email`);
-  console.log(`   POST /api/auth/resend-verification`);
-  console.log(`\n⚙️  Settings endpoints:`);
-  console.log(`   GET  /api/me (optional auth)`);
-  console.log(`   PUT  /api/me (auth required)`);
-  console.log(`   PUT  /api/me/password (auth required)`);
-  console.log(`\n👤 User endpoints:`);
-  console.log(`   GET  /api/users/:id`);
-  console.log(`\n📂 Topics endpoints:`);
-  console.log(`   GET  /api/topics`);
-  console.log(`   GET  /api/topics/:id`);
-  console.log(`   GET  /api/topics/by-name/:name`);
-  console.log(`\n📝 Posts endpoints:`);
-  console.log(`   POST   /api/posts (auth required)`);
-  console.log(`   GET    /api/posts`);
-  console.log(`   GET    /api/posts/:id`);
-  console.log(`   GET    /api/posts/:postId/comments`);
-  console.log(`   GET    /api/posts/topic/:topicId`);
-  console.log(`   GET    /api/posts/author/:authorId`);
-  console.log(`   PUT    /api/posts/:id (auth required)`);
-  console.log(`   DELETE /api/posts/:id (auth required)`);
-  console.log(`\n💬 Comments endpoints:`);
-  console.log(`   POST   /api/comments (auth required)`);
-  console.log(`   GET    /api/comments/:id`);
-  console.log(`   PUT    /api/comments/:id (auth required)`);
-  console.log(`   DELETE /api/comments/:id (auth required)`);
-  console.log(`\n👍 Votes endpoints:`);
-  console.log(`   POST   /api/votes (auth required)`);
-  console.log(`   DELETE /api/votes/:id (auth required)`);
-  console.log(`   GET    /api/votes/posts/:id (optional auth)`);
-  console.log(`   GET    /api/votes/comments/:id (optional auth)`);
-  console.log(`\n🔖 Saved Posts endpoints:`);
-  console.log(`   POST   /api/saved-posts (auth required)`);
-  console.log(`   GET    /api/saved-posts (auth required)`);
-  console.log(`   GET    /api/saved-posts/check/:postId (optional auth)`);
-  console.log(`   DELETE /api/saved-posts/:postId (auth required)`);
-  console.log(`\n🚨 Moderation endpoints:`);
-  console.log(`   POST   /api/reports (auth required)`);
-  console.log(`   GET    /api/admin/reports (admin only)`);
-  console.log(`   GET    /api/admin/reports/:id (admin only)`);
-  console.log(`   POST   /api/admin/reports/:id/unhide (admin only)`);
-  console.log(`   POST   /api/admin/reports/:id/dismiss (admin only)`);
-  console.log(`\n📰 Feed endpoints:`);
-  console.log(`   GET    /api/feed/home (optional auth)`);
-  console.log(`   GET    /api/feed/topic/:topicId (optional auth)`);
-  console.log(`   GET    /api/feed/author/:authorId (optional auth)`);
-});
+// Bootstrap system users (for serverless environments)
+// This ensures system users exist even in serverless deployments
+if (process.env.VERCEL) {
+  // In Vercel serverless environment, bootstrap on first request
+  // The bootstrapSystemUsers function is idempotent, so it's safe to call multiple times
+  bootstrapSystemUsers().catch(err => {
+    console.error('Failed to bootstrap system users:', err);
+  });
+}
+
+// Start server (only in non-serverless environments)
+// In Vercel, the app is exported and handled by the serverless function
+if (!process.env.VERCEL) {
+  app.listen(PORT, async () => {
+    console.log(`🚀 LearnLoop Backend running on port ${PORT}`);
+    console.log(`📚 Phase 9: Feed and Discovery`);
+    console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+    
+    // Bootstrap system users
+    await bootstrapSystemUsers();
+    console.log(`\n🔐 Auth endpoints:`);
+    console.log(`   POST /api/auth/register`);
+    console.log(`   POST /api/auth/login`);
+    console.log(`   POST /api/auth/verify-email`);
+    console.log(`   POST /api/auth/resend-verification`);
+    console.log(`\n⚙️  Settings endpoints:`);
+    console.log(`   GET  /api/me (optional auth)`);
+    console.log(`   PUT  /api/me (auth required)`);
+    console.log(`   PUT  /api/me/password (auth required)`);
+    console.log(`\n👤 User endpoints:`);
+    console.log(`   GET  /api/users/:id`);
+    console.log(`\n📂 Topics endpoints:`);
+    console.log(`   GET  /api/topics`);
+    console.log(`   GET  /api/topics/:id`);
+    console.log(`   GET  /api/topics/by-name/:name`);
+    console.log(`\n📝 Posts endpoints:`);
+    console.log(`   POST   /api/posts (auth required)`);
+    console.log(`   GET    /api/posts`);
+    console.log(`   GET    /api/posts/:id`);
+    console.log(`   GET    /api/posts/:postId/comments`);
+    console.log(`   GET    /api/posts/topic/:topicId`);
+    console.log(`   GET    /api/posts/author/:authorId`);
+    console.log(`   PUT    /api/posts/:id (auth required)`);
+    console.log(`   DELETE /api/posts/:id (auth required)`);
+    console.log(`\n💬 Comments endpoints:`);
+    console.log(`   POST   /api/comments (auth required)`);
+    console.log(`   GET    /api/comments/:id`);
+    console.log(`   PUT    /api/comments/:id (auth required)`);
+    console.log(`   DELETE /api/comments/:id (auth required)`);
+    console.log(`\n👍 Votes endpoints:`);
+    console.log(`   POST   /api/votes (auth required)`);
+    console.log(`   DELETE /api/votes/:id (auth required)`);
+    console.log(`   GET    /api/votes/posts/:id (optional auth)`);
+    console.log(`   GET    /api/votes/comments/:id (optional auth)`);
+    console.log(`\n🔖 Saved Posts endpoints:`);
+    console.log(`   POST   /api/saved-posts (auth required)`);
+    console.log(`   GET    /api/saved-posts (auth required)`);
+    console.log(`   GET    /api/saved-posts/check/:postId (optional auth)`);
+    console.log(`   DELETE /api/saved-posts/:postId (auth required)`);
+    console.log(`\n🚨 Moderation endpoints:`);
+    console.log(`   POST   /api/reports (auth required)`);
+    console.log(`   GET    /api/admin/reports (admin only)`);
+    console.log(`   GET    /api/admin/reports/:id (admin only)`);
+    console.log(`   POST   /api/admin/reports/:id/unhide (admin only)`);
+    console.log(`   POST   /api/admin/reports/:id/dismiss (admin only)`);
+    console.log(`\n📰 Feed endpoints:`);
+    console.log(`   GET    /api/feed/home (optional auth)`);
+    console.log(`   GET    /api/feed/topic/:topicId (optional auth)`);
+    console.log(`   GET    /api/feed/author/:authorId (optional auth)`);
+  });
+}
 
 export default app;
