@@ -19,6 +19,8 @@ import {
 
 const SALT_ROUNDS = 10;
 const MIN_PASSWORD_LENGTH = 8;
+// Dummy hash for timing attack prevention (bcrypt hash of "dummy_password_for_timing_attack_prevention")
+const DUMMY_HASH = '$2b$10$LXvkVgpvb0MHrKXQYUuqkeekDAntWE3/Ja4kO6/1IFiK6xGO4RLyy';
 
 /**
  * Register a new user
@@ -247,18 +249,12 @@ export async function login(req, res) {
       where: { email }
     });
 
-    if (!user) {
-      return res.status(401).json({
-        error: 'Invalid email or password',
-        message: 'The email or password you entered is incorrect. Please try again.',
-        code: 'INVALID_CREDENTIALS'
-      });
-    }
+    // Timing attack prevention: Always perform hash comparison
+    // If user not found, use a dummy hash to simulate the work
+    const targetHash = user ? user.hashedPassword : DUMMY_HASH;
+    const isValidPassword = await bcrypt.compare(password, targetHash);
 
-    // Verify password
-    const isValidPassword = await bcrypt.compare(password, user.hashedPassword);
-
-    if (!isValidPassword) {
+    if (!user || !isValidPassword) {
       return res.status(401).json({
         error: 'Invalid email or password',
         message: 'The email or password you entered is incorrect. Please try again.',
