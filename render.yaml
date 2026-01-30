@@ -1,0 +1,36 @@
+services:
+  # Backend Service (Node.js)
+  - type: web
+    name: learnloop-backend
+    env: node
+    plan: free
+    buildCommand: npm install && npx prisma generate
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: learnloop-db
+          property: connectionString
+    autoDeploy: false
+
+  # Frontend Service (Static Site) - Optional if using Vercel
+  # If you want to deploy frontend on Render too:
+  # - type: static
+  #   name: learnloop-frontend
+  #   env: static
+  #   buildCommand: cd frontend && npm install && npm run build
+  #   publishDir: frontend/out
+  #   envVars:
+  #     - key: NEXT_PUBLIC_API_URL
+  #       fromService:
+  #         type: web
+  #         name: learnloop-backend
+  #         property: url
+
+databases:
+  - name: learnloop-db
+    databaseName: learnloop
+    user: learnloop
+    plan: free
