@@ -12,11 +12,13 @@ import {
 } from '../controllers/adminController.js';
 import { requireAuth } from '../middleware/authMiddleware.js';
 import { requireAdmin } from '../middleware/adminMiddleware.js';
+import { adminLimiter } from '../middleware/rateLimiters.js';
 
 const router = express.Router();
 
 // All admin routes require both auth and admin privilege
-router.use(requireAuth, requireAdmin);
+// Also apply rate limiting
+router.use(requireAuth, requireAdmin, adminLimiter);
 
 // List all reports
 router.get('/reports', listReports);
