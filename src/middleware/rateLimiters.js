@@ -7,7 +7,7 @@
  * SYSTEM and BOT role users are exempt from all rate limits.
  */
 
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 
 /**
  * Skip function to exempt SYSTEM and BOT users from rate limits
@@ -22,6 +22,18 @@ function skipSystemAndBotUsers(req) {
   }
   return false;
 }
+
+/**
+ * Generate key for rate limiting
+ * Uses user ID if authenticated, otherwise IP address (normalized for IPv6)
+ */
+const keyGenerator = (req, res) => {
+  if (req.user) {
+    return req.user.id;
+  }
+  // Use ipKeyGenerator for proper IPv6 handling
+  return ipKeyGenerator(req.ip);
+};
 
 /**
  * Rate limiter for registration endpoint
@@ -79,6 +91,7 @@ export const createPostLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skip: skipSystemAndBotUsers,
+  keyGenerator,
   skipFailedRequests: true,
   handler: (req, res) => {
     const retryAfter = Math.ceil((req.rateLimit.resetTime.getTime() - Date.now()) / 1000);
@@ -104,6 +117,7 @@ export const createCommentLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skip: skipSystemAndBotUsers,
+  keyGenerator,
   skipFailedRequests: true,
   handler: (req, res) => {
     const retryAfter = Math.ceil((req.rateLimit.resetTime.getTime() - Date.now()) / 1000);
@@ -129,6 +143,7 @@ export const voteLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skip: skipSystemAndBotUsers,
+  keyGenerator,
   skipFailedRequests: true,
   handler: (req, res) => {
     const retryAfter = Math.ceil((req.rateLimit.resetTime.getTime() - Date.now()) / 1000);
@@ -154,6 +169,7 @@ export const saveLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skip: skipSystemAndBotUsers,
+  keyGenerator,
   skipFailedRequests: true,
   handler: (req, res) => {
     const retryAfter = Math.ceil((req.rateLimit.resetTime.getTime() - Date.now()) / 1000);
@@ -179,6 +195,7 @@ export const updateLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skip: skipSystemAndBotUsers,
+  keyGenerator,
   skipFailedRequests: true,
   handler: (req, res) => {
     const retryAfter = Math.ceil((req.rateLimit.resetTime.getTime() - Date.now()) / 1000);
@@ -204,6 +221,7 @@ export const accountSettingsLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skip: skipSystemAndBotUsers,
+  keyGenerator,
   skipFailedRequests: true,
   handler: (req, res) => {
     const retryAfter = Math.ceil((req.rateLimit.resetTime.getTime() - Date.now()) / 1000);
@@ -229,6 +247,7 @@ export const deleteLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skip: skipSystemAndBotUsers,
+  keyGenerator,
   skipFailedRequests: true,
   handler: (req, res) => {
     const retryAfter = Math.ceil((req.rateLimit.resetTime.getTime() - Date.now()) / 1000);
@@ -254,6 +273,7 @@ export const reportLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skip: skipSystemAndBotUsers,
+  keyGenerator,
   skipFailedRequests: true,
   handler: (req, res) => {
     const retryAfter = Math.ceil((req.rateLimit.resetTime.getTime() - Date.now()) / 1000);
@@ -262,6 +282,32 @@ export const reportLimiter = rateLimit({
       .json({
         error: 'Too many reports submitted',
         message: 'You have reached the report submission limit. Please try again later.',
+        retryAfter
+      });
+  }
+});
+
+/**
+ * Rate limiter for admin operations
+ * - User-based limiting
+ * - 100 requests per hour
+ * - Exempts SYSTEM and BOT users
+ */
+export const adminLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 100, // 100 requests per window
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: skipSystemAndBotUsers,
+  keyGenerator,
+  skipFailedRequests: true,
+  handler: (req, res) => {
+    const retryAfter = Math.ceil((req.rateLimit.resetTime.getTime() - Date.now()) / 1000);
+    res.status(429)
+      .set('Retry-After', retryAfter)
+      .json({
+        error: 'Too many admin actions',
+        message: 'You have reached the admin action limit. Please try again later.',
         retryAfter
       });
   }
@@ -292,4 +338,3 @@ export const contactLimiter = rateLimit({
 
 // For backward compatibility, export authLimiter as an alias to loginLimiter
 export const authLimiter = loginLimiter;
-
