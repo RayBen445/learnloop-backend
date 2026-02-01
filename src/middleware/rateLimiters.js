@@ -7,7 +7,21 @@
  * SYSTEM and BOT role users are exempt from all rate limits.
  */
 
-import rateLimit from 'express-rate-limit';
+import { rateLimit, ipKeyGenerator } from 'express-rate-limit';
+
+/**
+ * Key generator for rate limiting
+ *
+ * Uses user ID if authenticated, otherwise falls back to IP address.
+ * This prevents users from bypassing limits by rotating IPs,
+ * and prevents shared IPs (NAT) from being unfairly limited by one bad actor.
+ */
+export const userKeyGenerator = (req, res) => {
+  if (req.user && req.user.id) {
+    return req.user.id;
+  }
+  return ipKeyGenerator(req.ip);
+};
 
 /**
  * Skip function to exempt SYSTEM and BOT users from rate limits
@@ -78,6 +92,7 @@ export const createPostLimiter = rateLimit({
   max: 30, // 30 posts per window
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: userKeyGenerator,
   skip: skipSystemAndBotUsers,
   skipFailedRequests: true,
   handler: (req, res) => {
@@ -103,6 +118,7 @@ export const createCommentLimiter = rateLimit({
   max: 60, // 60 comments per window
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: userKeyGenerator,
   skip: skipSystemAndBotUsers,
   skipFailedRequests: true,
   handler: (req, res) => {
@@ -128,6 +144,7 @@ export const voteLimiter = rateLimit({
   max: 100, // 100 votes per window
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: userKeyGenerator,
   skip: skipSystemAndBotUsers,
   skipFailedRequests: true,
   handler: (req, res) => {
@@ -153,6 +170,7 @@ export const saveLimiter = rateLimit({
   max: 30, // 30 save actions per window
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: userKeyGenerator,
   skip: skipSystemAndBotUsers,
   skipFailedRequests: true,
   handler: (req, res) => {
@@ -178,6 +196,7 @@ export const updateLimiter = rateLimit({
   max: 30, // 30 updates per window
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: userKeyGenerator,
   skip: skipSystemAndBotUsers,
   skipFailedRequests: true,
   handler: (req, res) => {
@@ -203,6 +222,7 @@ export const accountSettingsLimiter = rateLimit({
   max: 30, // 30 operations per window
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: userKeyGenerator,
   skip: skipSystemAndBotUsers,
   skipFailedRequests: true,
   handler: (req, res) => {
@@ -228,6 +248,7 @@ export const deleteLimiter = rateLimit({
   max: 30, // 30 deletes per window
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: userKeyGenerator,
   skip: skipSystemAndBotUsers,
   skipFailedRequests: true,
   handler: (req, res) => {
@@ -253,6 +274,7 @@ export const reportLimiter = rateLimit({
   max: 10, // 10 reports per window
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: userKeyGenerator,
   skip: skipSystemAndBotUsers,
   skipFailedRequests: true,
   handler: (req, res) => {
