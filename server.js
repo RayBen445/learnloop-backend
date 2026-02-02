@@ -20,6 +20,7 @@ import adminRoutes from './src/routes/adminRoutes.js';
 import feedRoutes from './src/routes/feedRoutes.js';
 import contactRoutes from './src/routes/contactRoutes.js';
 import { bootstrapSystemUsers } from './src/bootstrap.js';
+import { securityHeaders } from './src/middleware/securityHeaders.js';
 
 const app = express();
 
@@ -98,6 +99,10 @@ const corsOptions = {
 
 // Apply CORS middleware before all routes
 app.use(cors(corsOptions));
+
+// Security headers - Applied early to protect all responses
+app.use(securityHeaders);
+app.disable('x-powered-by');
 
 // 3. Body parsers - Parse request bodies before routes
 app.use(express.json());
