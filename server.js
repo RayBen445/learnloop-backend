@@ -7,6 +7,7 @@
 
 import express from 'express';
 import cors from 'cors';
+import securityHeaders from './src/middleware/securityHeaders.js';
 import authRoutes from './src/routes/authRoutes.js';
 import settingsRoutes from './src/routes/settingsRoutes.js';
 import usersRoutes from './src/routes/usersRoutes.js';
@@ -26,6 +27,9 @@ const app = express();
 // Middleware order is critical for proper functionality:
 // 1. Trust proxy - Must be first for rate limiting to work behind reverse proxies
 app.set('trust proxy', 1);
+
+// Security headers - Apply early
+app.use(securityHeaders);
 
 const PORT = process.env.PORT || 3000;
 
