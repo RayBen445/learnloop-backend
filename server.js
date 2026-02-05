@@ -20,12 +20,16 @@ import adminRoutes from './src/routes/adminRoutes.js';
 import feedRoutes from './src/routes/feedRoutes.js';
 import contactRoutes from './src/routes/contactRoutes.js';
 import { bootstrapSystemUsers } from './src/bootstrap.js';
+import securityHeaders from './src/middleware/securityHeaders.js';
 
 const app = express();
 
 // Middleware order is critical for proper functionality:
 // 1. Trust proxy - Must be first for rate limiting to work behind reverse proxies
 app.set('trust proxy', 1);
+
+// Apply security headers
+app.use(securityHeaders);
 
 const PORT = process.env.PORT || 3000;
 
