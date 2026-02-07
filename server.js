@@ -7,6 +7,7 @@
 
 import express from 'express';
 import cors from 'cors';
+import securityHeaders from './src/middleware/securityHeaders.js';
 import authRoutes from './src/routes/authRoutes.js';
 import settingsRoutes from './src/routes/settingsRoutes.js';
 import usersRoutes from './src/routes/usersRoutes.js';
@@ -27,6 +28,10 @@ const app = express();
 // 1. Trust proxy - Must be first for rate limiting to work behind reverse proxies
 app.set('trust proxy', 1);
 
+// 2. Security Headers - Applied early to protect all responses
+app.use(securityHeaders);
+app.disable('x-powered-by');
+
 const PORT = process.env.PORT || 3000;
 
 // Health check endpoint - Before CORS for Render health checks
@@ -40,7 +45,7 @@ app.get('/health', (req, res) => {
 });
 
 // CORS Configuration
-// 2. CORS - Applied before body parsing for efficient preflight handling
+// 3. CORS - Applied before body parsing for efficient preflight handling
 // Dynamic origin function to support:
 // - Vercel deployments (https://*.vercel.app including learnloop-frontend.vercel.app)
 // - localhost for development only
@@ -99,12 +104,12 @@ const corsOptions = {
 // Apply CORS middleware before all routes
 app.use(cors(corsOptions));
 
-// 3. Body parsers - Parse request bodies before routes
+// 4. Body parsers - Parse request bodies before routes
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// 4. Rate limiting - Applied per-route in individual route files (see src/routes/*)
-// 5. Routes - Defined below with route-specific rate limiters
+// 5. Rate limiting - Applied per-route in individual route files (see src/routes/*)
+// 6. Routes - Defined below with route-specific rate limiters
 
 // API Routes
 app.use('/api/auth', authRoutes);
